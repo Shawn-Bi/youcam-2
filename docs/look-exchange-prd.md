@@ -24,7 +24,7 @@ Example brief: *"Silver-and-black concert look, under $120, size M. Keep my boot
 
 **Why it wins the hackathon:** it uses three YouCam APIs in one flow (clothes try-on, bag try-on, image-to-video) for a real eCommerce decision: *which store's look should I buy?*
 
-The stores are clearly labeled **sample stores** with local catalogs. No payments, no live bidding.
+The stores are **sample stores** with local catalogs. The app presents them like real stores, with no badge; the README explains once that they are samples. No payments, no live bidding.
 
 ### 2. User flow
 
@@ -112,7 +112,7 @@ type Item = {
   imageUrl: string; productUrl: string; locked: boolean;
 };
 type Proposal = {
-  id: string; storeId: string; storeName: string; sampleStore: true;
+  id: string; storeId: string; storeName: string;
   items: Item[]; kept: string[]; subtotal: number; rationale: string;
   version: number; selected: boolean;
 };
@@ -178,7 +178,7 @@ type Proposal = {
 
 **为什么能在黑客松中脱颖而出：** 一个流程里使用三个 YouCam API（服装试穿、包袋试穿、图片生成视频），解决真实的电商决策问题：*该买哪家店的造型？*
 
-商店均明确标注为**示例商店**，使用本地商品目录。不涉及支付，也没有真实竞价。
+商店均为**示例商店**，使用本地商品目录。应用中按真实商店样式展示，不加标签；README 中统一说明它们是示例。不涉及支付，也没有真实竞价。
 
 ### 2. 用户流程
 

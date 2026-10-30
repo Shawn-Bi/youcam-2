@@ -46,7 +46,7 @@ flowchart TD
 
 **1. Landing — post a look brief**
 - The shopper sees one main action: **Post a look brief**.
-- A short explainer says what happens: stores compete with try-on proposals; sample catalogs are labeled; no purchase happens in the prototype.
+- A short explainer says what happens: stores compete with try-on proposals; no purchase happens in the prototype.
 
 **2. Upload photo and consent**
 - Upload a photo the shopper has the right to use. Show a preview, check format and size, and explain errors in plain language.
@@ -59,7 +59,7 @@ flowchart TD
 - The backend turns the brief into structured data. If a required part is missing or unclear (no budget, impossible budget, no size), the shopper is asked to fix it before stores search.
 
 **4. Stores build proposals**
-- Two clearly labeled sample stores each assemble one proposal from their own catalog.
+- Two sample stores each assemble one proposal from their own catalog. The app shows them like real stores; the README explains they are samples.
 - Stores only propose items available in the shopper's chosen size. Availability is checked in code against the catalog, not left to the language model.
 - A progress state shows each store “building a proposal.”
 - If a store finds no valid match, it says so. The app never invents a product.
@@ -92,7 +92,7 @@ flowchart TD
 
 **10. Save and shop**
 - The shopper saves the preferred proposal, with each item's size and the video if made, and opens product links.
-- Sample inventory stays labeled. The prototype does not process payments.
+- The prototype does not process payments.
 
 ### States every screen must handle
 
@@ -149,7 +149,7 @@ flowchart TD
 
 **1. 首页 — 发布穿搭需求**
 - 页面只有一个主要操作：**发布穿搭需求**。
-- 简短说明流程：商店用试穿方案竞争；示例目录有明确标注；原型不进行购买。
+- 简短说明流程：商店用试穿方案竞争；原型不进行购买。
 
 **2. 上传照片并同意授权**
 - 上传用户有权使用的照片。显示预览，检查格式和大小，用通俗语言说明错误。
@@ -162,7 +162,7 @@ flowchart TD
 - 后端将需求转为结构化数据。若缺少必要信息或信息不明确（没有预算、预算不可行、没有尺码），先请用户修改，再开始检索。
 
 **4. 商店生成方案**
-- 两家明确标注的示例商店，各自从自己的目录组装一个方案。
+- 两家示例商店各自从自己的目录组装一个方案。应用中按真实商店样式展示；README 中说明它们是示例。
 - 商店只推荐用户所选尺码有货的商品。库存由代码根据目录核对，不交给语言模型判断。
 - 进度状态显示每家商店“正在生成方案”。
 - 若商店找不到有效商品，会直接说明，系统绝不编造商品。
@@ -195,7 +195,7 @@ flowchart TD
 
 **10. 保存并购物**
 - 用户保存最喜欢的方案（含每件商品的尺码和已生成的视频）并打开商品链接。
-- 示例库存始终有标注。原型不处理支付。
+- 原型不处理支付。
 
 ### 每个页面都需处理的状态
 

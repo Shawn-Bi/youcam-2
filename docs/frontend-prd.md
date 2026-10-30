@@ -45,7 +45,7 @@ Colors, fonts, spacing and the favicon come from Dennis's design system and go i
 
 ### 3.2 Proposals (`/proposals/:briefId`) — concept `02-proposals.png`
 - Two cards side by side on desktop, stacked on mobile.
-- Each card: store name + **"Sample store"** badge, item photos with name, **size**, price; "Kept: your boots" chip; subtotal; styling note; **Preview on me**; **Pick this store**.
+- Each card: store name, item photos with name, **size**, price; "Kept: your boots" chip; subtotal; styling note; **Preview on me**; **Pick this store**.
 - While the backend is building: a skeleton card per store with "Building a proposal…".
 - No-match: the store's card shows what was searched and offers **Remove size**, **Raise budget** and **Edit brief** (FitFindr's empty-results pattern).
 
