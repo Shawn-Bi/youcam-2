@@ -10,7 +10,7 @@ const PREVIEW_TIMEOUT_MS = 90_000;
 const outlineButton =
   "min-h-11 rounded-full border border-sage px-6 text-small font-medium text-sage hover:bg-sage-tint";
 
-function FrameLabel({ children, ai = false }: { children: React.ReactNode; ai?: boolean }) {
+export function FrameLabel({ children, ai = false }: { children: React.ReactNode; ai?: boolean }) {
   return (
     <span className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-label font-medium">
       {ai && <span aria-hidden="true" className="size-2 rounded-full bg-terracotta" />}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
 import { ItemRow } from "@/components/ItemRow";
 import { TryOnViewer } from "@/components/TryOnViewer";
+import { VideoPanel } from "@/components/VideoPanel";
 import { ApiError, OutOfStockError, replaceItem, selectProposal, startPreview, updateItem } from "@/lib/api";
 import { loadBrief, loadPreviews, savePreviews, saveProposal } from "@/lib/briefStore";
 import { formatPrice } from "@/lib/format";
@@ -132,6 +133,8 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
 
   const viewing = proposal.items.find((i) => i.itemId === viewingId) ?? proposal.items[0];
   const overBudget = budget > 0 && proposal.subtotal > budget;
+  // The video is made from the outfit's main piece (the jacket or top), not the bag.
+  const mainItem = proposal.items.find((i) => isApparel(i.category));
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 md:px-6 md:py-12">
@@ -220,9 +223,15 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
           )}
 
           {proposal.selected ? (
-            <p className="rounded-field bg-sage-tint px-4 py-3 text-small text-ink">
-              You picked {proposal.storeName}. A short video of your look comes next.
-            </p>
+            <div className="flex flex-col gap-3">
+              <p className="rounded-field bg-sage-tint px-4 py-3 text-small text-ink">You picked {proposal.storeName}.</p>
+              <Link
+                href={`/saved/${briefId}/${proposal.id}`}
+                className="flex min-h-12 items-center justify-center rounded-full border border-line px-6 text-body font-medium text-ink hover:bg-sage-tint"
+              >
+                Save proposal
+              </Link>
+            </div>
           ) : (
             <button
               type="button"
@@ -235,6 +244,10 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
           )}
         </section>
       </div>
+
+      {proposal.selected && mainItem && (
+        <VideoPanel proposal={proposal} previewId={previews[mainItem.itemId] ?? null} itemName={mainItem.name} />
+      )}
     </main>
   );
 }
