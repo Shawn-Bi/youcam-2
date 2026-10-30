@@ -41,7 +41,7 @@
 
 | 功能 | 任务接口 | 要点 | 单位 |
 | --- | --- | --- | --- |
-| 服装试穿 V4（P0） | `POST /s2s/v2.0/task/cloth-v4` | 用户照片 + 服装参考图；`garment_category` 用 `upper_body` 或 `outer` | 待确认 |
+| 服装试穿 V4（P0） | `POST /s2s/v2.0/task/cloth-v4` | 用户照片 + 服装参考图；`garment_category` 用 `upper_body` 或 `outer` | 2（Gate A 实测） |
 | 包袋试穿（P1） | `POST /s2s/v2.0/task/bag` | 用户照片 + 包袋参考图 | 2 |
 | 图片生成视频 V2（P0） | `POST /s2s/v2.0/task/image-to-video/youcam` | `src_file_url` 或 `src_file_id`（试穿结果图）；`dst_duration`: 5；`resolution`: `"480"`；`model`: `"youcam-video-v2"`；可选 `prompt` | 480p 每秒 1 → 5 秒 = 5 |
 
@@ -55,6 +55,13 @@
 - V4 的具体请求字段、图片要求和耗时。
 - 试穿结果 URL 能否直接作为视频任务的 `src_file_url`。不行的话，先下载结果图，再通过 File API 重新上传。
 - 视频提示词建议简短，例如：“The person turns slowly and smiles, showing the outfit.” 生成视频不保证服装细节完全不变。
+
+**Gate A 实测结果（2026-10-30，各 1 次真实调用）：**
+- 文件上传：`POST /s2s/v2.0/file` 是唯一的 File API；返回 `data.files[].file_id` 和 `requests[]`（预签名 `PUT` 地址），上传时不要带 `Authorization`。
+- 服装试穿 V4：`src_file_id` + `ref_file_id` + `garment_category: "outer"` 可用，全身照被接受，耗时约 13 秒，**2 单位**。结果在 `data.results.url`（JPEG，约 150 KB，2 小时有效）。
+- 图片生成视频：以试穿结果图重新上传得到的 `src_file_id` 可用，5 秒、480p，耗时约 59 秒，**5 单位**。结果是 MP4（约 1 MB）。后端是下载结果图再上传，没有测试把结果 URL 直接当 `src_file_url`。
+- 免费的只读接口：`GET /s2s/v1.0/client/credit` 查余额；`GET /s2s/v2.0/credit/feature-cost` 只列了 20 项，不含服装、包袋和视频。
+- 日志注意：`httpx` 默认会在 INFO 级别记录完整请求地址，包括签名 URL 和任务 ID，后端已将其降为 WARNING。
 
 Dennis 之前在另一个黑客松项目里写过经过测试的 YouCam 适配代码（File API、试穿任务、轮询、单位预算）。需要的话可以找他要链接参考。
 

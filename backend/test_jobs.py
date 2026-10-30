@@ -209,6 +209,14 @@ def test_video_falls_back_to_the_result_url_when_the_download_fails(fake):
     assert task['status'] == 'success' and ('video', None, 'https://r.example/p.png') in fake.calls
 
 
+def test_request_urls_are_not_logged(caplog):
+    """YouCam's signed upload/download URLs and task ids must never reach the server log."""
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    assert logging.getLogger('httpx').getEffectiveLevel() >= logging.WARNING
+    assert logging.getLogger('httpcore').getEffectiveLevel() >= logging.WARNING
+
+
 def test_task_response_hides_internal_fields():
     task = {'status': 'success', 'imageUrl': 'https://r.example/a', 'created': 1, 'touched': 2, 'proposal': 'internal', 'item': 'x'}
     assert Jobs.public(task) == {'status': 'success', 'imageUrl': 'https://r.example/a'}

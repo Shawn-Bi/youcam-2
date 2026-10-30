@@ -38,6 +38,10 @@ Routes follow the shared contract in `docs/look-exchange-prd.md` section 6 and t
 - Task records live for an hour after last use, so a client can poll the same `previewId` or `videoId` again without paying for a new task.
 - `GET /shop/{storeId}/{itemId}` is the sample product page that `productUrl` points to.
 
+## Measured with the real API (2026-10-30)
+
+One clothes try-on (`outer`, full-body photo) took about 13 seconds and cost 2 units. One 5-second 480p video made from that result took about 59 seconds and cost 5 units. The preview deadline is 120 seconds and the video deadline 300 seconds. Request URLs are never logged, because YouCam's are signed.
+
 ## Unit guards
 
 YouCam charges only for successful tasks. A session is one uploaded photo. Per session the defaults allow 6 running or successful try-ons and 2 videos; a failed task gives its slot back, while the attempt caps still bound retries. Per UTC day the defaults allow 40 tasks and 10 videos. Limits reset when the server restarts and a new upload starts a new session, so they are a guard rail, not abuse prevention.

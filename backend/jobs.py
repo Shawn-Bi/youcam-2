@@ -8,6 +8,9 @@ from config import int_env
 from youcam import YouCam, CLOTH, VIDEO, YouCamError, sniff, friendly
 
 log = logging.getLogger('look-exchange')
+# httpx logs every request URL at INFO, which would put YouCam's signed URLs and task ids in the server log.
+for noisy in ('httpx', 'httpcore'):
+    logging.getLogger(noisy).setLevel(logging.WARNING)
 POLL_SECONDS = 3
 DEADLINES = {'preview': 120, 'video': 300}
 
