@@ -1,0 +1,45 @@
+{
+  "stores": [
+    {
+      "storeId": "northline",
+      "name": "Northline",
+      "tagline": "Edgy leather. Black. Chrome.",
+      "description": "Leather, chrome and night-out layers.",
+      "heroImage": "/catalog/store-northline.jpg"
+    },
+    {
+      "storeId": "mono-studio",
+      "name": "Mono Studio",
+      "tagline": "Minimal black. White. Grey.",
+      "description": "Clean essentials in black, white and grey.",
+      "heroImage": "/catalog/store-mono-studio.jpg"
+    }
+  ],
+  "items": [
+    { "itemId": "nl_racer_jacket", "storeId": "northline", "name": "Racer leather jacket", "category": "outer", "price": 89, "sizesInStock": ["S", "M", "L"], "colors": ["black", "silver"], "styleTags": ["edgy", "concert", "night out"], "imageUrl": "/catalog/nl_racer_jacket.jpg", "productUrl": "/products/nl_racer_jacket" },
+    { "itemId": "nl_vinyl_jacket", "storeId": "northline", "name": "Cropped vinyl jacket", "category": "outer", "price": 72, "sizesInStock": ["XS", "S", "M"], "colors": ["black"], "styleTags": ["edgy", "concert"], "imageUrl": "/catalog/nl_vinyl_jacket.jpg", "productUrl": "/products/nl_vinyl_jacket" },
+    { "itemId": "nl_chrome_bomber", "storeId": "northline", "name": "Chrome-zip bomber", "category": "outer", "price": 94, "sizesInStock": ["M", "L", "XL", "XXL"], "colors": ["black", "silver"], "styleTags": ["street", "night out"], "imageUrl": "/catalog/nl_chrome_bomber.jpg", "productUrl": "/products/nl_chrome_bomber" },
+    { "itemId": "nl_chrome_cami", "storeId": "northline", "name": "Chrome cowl cami", "category": "top", "price": 34, "sizesInStock": ["XS", "S", "M", "L"], "colors": ["silver"], "styleTags": ["concert", "party", "night out"], "imageUrl": "/catalog/nl_chrome_cami.jpg", "productUrl": "/products/nl_chrome_cami" },
+    { "itemId": "nl_mesh_top", "storeId": "northline", "name": "Sheer mesh top", "category": "top", "price": 28, "sizesInStock": ["S", "M", "L"], "colors": ["black"], "styleTags": ["edgy", "concert"], "imageUrl": "/catalog/nl_mesh_top.jpg", "productUrl": "/products/nl_mesh_top" },
+    { "itemId": "nl_studded_tee", "storeId": "northline", "name": "Studded black tee", "category": "top", "price": 30, "sizesInStock": ["S", "M", "L", "XL"], "colors": ["black", "silver"], "styleTags": ["street", "concert"], "imageUrl": "/catalog/nl_studded_tee.jpg", "productUrl": "/products/nl_studded_tee" },
+    { "itemId": "nl_cargo_trouser", "storeId": "northline", "name": "Black cargo trousers", "category": "bottom", "price": 59, "sizesInStock": ["S", "M", "L"], "colors": ["black"], "styleTags": ["street", "concert"], "imageUrl": "/catalog/nl_cargo_trouser.jpg", "productUrl": "/products/nl_cargo_trouser" },
+    { "itemId": "nl_leather_skirt", "storeId": "northline", "name": "Faux-leather mini skirt", "category": "bottom", "price": 46, "sizesInStock": ["XS", "S", "M"], "colors": ["black"], "styleTags": ["edgy", "party"], "imageUrl": "/catalog/nl_leather_skirt.jpg", "productUrl": "/products/nl_leather_skirt" },
+    { "itemId": "nl_coated_trouser", "storeId": "northline", "name": "Coated wide-leg trousers", "category": "bottom", "price": 68, "sizesInStock": ["M", "L"], "colors": ["black"], "styleTags": ["night out", "edgy"], "imageUrl": "/catalog/nl_coated_trouser.jpg", "productUrl": "/products/nl_coated_trouser" },
+    { "itemId": "nl_luna_bag", "storeId": "northline", "name": "Luna shoulder bag", "category": "bag", "price": 25, "sizesInStock": [], "colors": ["black", "silver"], "styleTags": ["concert", "night out"], "imageUrl": "/catalog/nl_luna_bag.jpg", "productUrl": "/products/nl_luna_bag" },
+    { "itemId": "nl_mesh_bag", "storeId": "northline", "name": "Mesh mini bag", "category": "bag", "price": 15, "sizesInStock": [], "colors": ["black"], "styleTags": ["concert", "party"], "imageUrl": "/catalog/nl_mesh_bag.jpg", "productUrl": "/products/nl_mesh_bag" },
+    { "itemId": "nl_chain_bag", "storeId": "northline", "name": "Silver chain bag", "category": "bag", "price": 42, "sizesInStock": [], "colors": ["silver"], "styleTags": ["party", "night out"], "imageUrl": "/catalog/nl_chain_bag.jpg", "productUrl": "/products/nl_chain_bag" },
+
+    { "itemId": "ms_shine_jacket", "storeId": "mono-studio", "name": "Shine zip jacket", "category": "outer", "price": 78, "sizesInStock": ["XS", "M", "XL"], "colors": ["black"], "styleTags": ["minimal", "concert", "night out"], "imageUrl": "/catalog/ms_shine_jacket.jpg", "productUrl": "/products/ms_shine_jacket" },
+    { "itemId": "ms_satin_bomber", "storeId": "mono-studio", "name": "Satin bomber", "category": "outer", "price": 70, "sizesInStock": ["M", "L", "XXL"], "colors": ["black"], "styleTags": ["minimal", "night out"], "imageUrl": "/catalog/ms_satin_bomber.jpg", "productUrl": "/products/ms_satin_bomber" },
+    { "itemId": "ms_wool_blazer", "storeId": "mono-studio", "name": "Boxy wool blazer", "category": "outer", "price": 98, "sizesInStock": ["S", "M", "L"], "colors": ["grey"], "styleTags": ["minimal", "work"], "imageUrl": "/catalog/ms_wool_blazer.jpg", "productUrl": "/products/ms_wool_blazer" },
+    { "itemId": "ms_rib_tank", "storeId": "mono-studio", "name": "Ribbed tank", "category": "top", "price": 22, "sizesInStock": ["XS", "S", "M", "L", "XL"], "colors": ["white"], "styleTags": ["minimal", "everyday"], "imageUrl": "/catalog/ms_rib_tank.jpg", "productUrl": "/products/ms_rib_tank" },
+    { "itemId": "ms_knit_sweater", "storeId": "mono-studio", "name": "Grey knit sweater", "category": "top", "price": 54, "sizesInStock": ["S", "M", "L"], "colors": ["grey"], "styleTags": ["minimal", "everyday"], "imageUrl": "/catalog/ms_knit_sweater.jpg", "productUrl": "/products/ms_knit_sweater" },
+    { "itemId": "ms_crisp_shirt", "storeId": "mono-studio", "name": "Crisp white shirt", "category": "top", "price": 44, "sizesInStock": ["S", "M", "L", "XL"], "colors": ["white"], "styleTags": ["minimal", "work"], "imageUrl": "/catalog/ms_crisp_shirt.jpg", "productUrl": "/products/ms_crisp_shirt" },
+    { "itemId": "ms_pleat_trouser", "storeId": "mono-studio", "name": "Pleated grey trousers", "category": "bottom", "price": 64, "sizesInStock": ["S", "M", "L"], "colors": ["grey"], "styleTags": ["minimal", "work"], "imageUrl": "/catalog/ms_pleat_trouser.jpg", "productUrl": "/products/ms_pleat_trouser" },
+    { "itemId": "ms_black_jean", "storeId": "mono-studio", "name": "Straight black jeans", "category": "bottom", "price": 58, "sizesInStock": ["XS", "S", "M", "L"], "colors": ["black"], "styleTags": ["minimal", "concert", "everyday"], "imageUrl": "/catalog/ms_black_jean.jpg", "productUrl": "/products/ms_black_jean" },
+    { "itemId": "ms_midi_skirt", "storeId": "mono-studio", "name": "Black midi skirt", "category": "bottom", "price": 48, "sizesInStock": ["S", "M"], "colors": ["black"], "styleTags": ["minimal", "night out"], "imageUrl": "/catalog/ms_midi_skirt.jpg", "productUrl": "/products/ms_midi_skirt" },
+    { "itemId": "ms_nova_bag", "storeId": "mono-studio", "name": "Nova chain bag", "category": "bag", "price": 30, "sizesInStock": [], "colors": ["black", "silver"], "styleTags": ["minimal", "concert"], "imageUrl": "/catalog/ms_nova_bag.jpg", "productUrl": "/products/ms_nova_bag" },
+    { "itemId": "ms_disc_bag", "storeId": "mono-studio", "name": "Disc bag", "category": "bag", "price": 18, "sizesInStock": [], "colors": ["black"], "styleTags": ["minimal", "party"], "imageUrl": "/catalog/ms_disc_bag.jpg", "productUrl": "/products/ms_disc_bag" },
+    { "itemId": "ms_canvas_tote", "storeId": "mono-studio", "name": "Canvas tote", "category": "bag", "price": 26, "sizesInStock": [], "colors": ["white"], "styleTags": ["minimal", "everyday"], "imageUrl": "/catalog/ms_canvas_tote.jpg", "productUrl": "/products/ms_canvas_tote" }
+  ]
+}
