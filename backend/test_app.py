@@ -58,3 +58,30 @@ def test_catalog_images_are_served():
     image = client.get(path)
     assert image.status_code == 200
     assert image.headers['content-type'] == 'image/png'
+
+def test_preview_video_reuse_and_stale_guard(monkeypatch):
+    import app as module
+    monkeypatch.setenv('YOUCAM_API_KEY', 'test-key')
+    monkeypatch.setattr(module, 'PUBLIC_BASE_URL', 'https://example.com')
+    def fake_start(task, key, **kwargs):
+        task.update(status='success')
+        if task['kind'] == 'preview': task['imageUrl'] = 'https://example.com/preview.png'
+        else: task['videoUrl'] = 'https://example.com/video.mp4'
+    monkeypatch.setattr(module.jobs, 'start', fake_start)
+    photo = client.post('/api/photos', data={'consent':'true'}, files={'photo':('test.png', png(), 'image/png')}).json()['photoId']
+    p = client.post('/api/briefs', json={'photoId':photo, 'text':'concert', 'budget':120, 'occasion':'concert','sizes':{'top':'M'},'keep':[]}).json()['proposals'][0]
+    base = f"/api/proposals/{p['id']}"
+    item = p['items'][0]
+    preview = client.post(base+'/previews',json={'itemId':item['itemId']})
+    assert preview.status_code == 200
+    preview_id = preview.json()['previewId']
+    assert client.post(base+'/previews',json={'itemId':item['itemId']}).json()['previewId'] == preview_id
+    assert client.get('/api/previews/'+preview_id).json() == {'status':'success','imageUrl':'https://example.com/preview.png'}
+    video_body = {'previewId':preview_id,'duration':5,'resolution':'480'}
+    assert client.post(base+'/videos',json=video_body).status_code == 409
+    assert client.post(base+'/select').status_code == 200
+    video = client.post(base+'/videos',json=video_body)
+    assert video.status_code == 200
+    assert client.get('/api/videos/'+video.json()['videoId']).json()['status'] == 'success'
+    client.patch(base+'/items/'+item['itemId'],json={'size':'S'})
+    assert client.post(base+'/videos',json=video_body).status_code == 409
