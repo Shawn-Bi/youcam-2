@@ -21,18 +21,13 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
   } catch {
     throw new ApiError("We couldn't reach Look Exchange. Check your connection and try again.", true);
   }
-  if (res.status === 422) {
-    const body = await res.json().catch(() => ({}));
-    throw new ValidationError(body.errors ?? {});
-  }
-  if (res.status === 409) {
-    const body = await res.json().catch(() => ({}));
-    if (body.code === "out_of_stock") throw new OutOfStockError(body.alternatives ?? []);
-  }
-  if (!res.ok) {
-    throw new ApiError("Something went wrong on our side. Try again in a moment.");
-  }
-  return res.json() as Promise<T>;
+  if (res.ok) return res.json() as Promise<T>;
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 422 && body.errors) throw new ValidationError(body.errors);
+  if (res.status === 409 && body.code === "out_of_stock") throw new OutOfStockError(body.alternatives ?? []);
+  // The backend explains other refusals in plain words ("Select this proposal first.",
+  // "Generation limit reached…"), so show its message rather than a generic one.
+  throw new ApiError(typeof body.error === "string" ? body.error : "Something went wrong on our side. Try again in a moment.");
 }
 
 export async function uploadPhoto(photo: File): Promise<{ photoId: string }> {
