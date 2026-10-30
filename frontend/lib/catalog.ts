@@ -1,7 +1,7 @@
 import data from "@/data/catalog.json";
 import type { Category, Item } from "./types";
 
-// The two sample stores and their products. The backend reads the same file
+// The four sample stores and their products. The backend reads the same file
 // (frontend/data/catalog.json) to build proposals, so prices and sizes match.
 
 export type Store = {
@@ -10,6 +10,8 @@ export type Store = {
   tagline: string;
   description: string;
   heroImage: string;
+  /** Whether the store photo is dark (white text over it) or light (ink text). */
+  tone: "dark" | "light";
 };
 
 export type CatalogItem = {
@@ -25,7 +27,7 @@ export type CatalogItem = {
   productUrl: string;
 };
 
-export const stores: Store[] = data.stores;
+export const stores = data.stores as Store[];
 export const catalogItems = data.items as CatalogItem[];
 
 export const CATEGORY_NAMES: Record<Category, string> = {
