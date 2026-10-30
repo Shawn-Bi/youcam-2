@@ -65,6 +65,9 @@ export function BriefForm() {
     setBudget(input.budget ? String(input.budget) : "");
     setTopSize(input.sizes?.top ?? "");
     setBottomSize(input.sizes?.bottom ?? "");
+    // Restored values are the shopper's own choices: editing the sentence must not overwrite them.
+    setBudgetSetByHand(Boolean(input.budget));
+    setSizeSetByHand(Boolean(input.sizes?.top));
     setKeep(input.keep);
   }, []);
 
@@ -77,7 +80,11 @@ export function BriefForm() {
     setText(`Build a look around the ${item.name} from ${store?.name ?? "the store"}.`);
     if (size && SIZES.includes(size)) {
       if (item.category === "bottom") setBottomSize(size);
-      else if (item.category !== "bag") setTopSize(size);
+      else if (item.category !== "bag") {
+        setTopSize(size);
+        // Picked on the product page, so the sentence must not change it.
+        setSizeSetByHand(true);
+      }
     }
   }, [searchParams]);
 
