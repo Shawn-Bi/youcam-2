@@ -23,6 +23,10 @@ The two stores in Look Exchange, and every product, price and size they offer, a
 
 Look Exchange 中的两家商店及其商品、价格和尺码都是为本次黑客松演示制作的**示例**，并非真实商店，也无法购买。试穿预览和视频由 YouCam API 生成，仅展示外观，不代表精确尺码或合身程度。
 
-Current state: planning documents only; no code yet.
+## Current state / 当前状态
 
-当前状态：仅有规划文档，尚未开始编码。
+- **Frontend** ([`frontend/`](frontend/README.md)): Next.js app with the brief screen working on mock data. Other screens are next.
+- **Backend:** not started.
+
+- **前端**（[`frontend/`](frontend/README.md)）：Next.js 应用，需求页已可用模拟数据运行，其余页面开发中。
+- **后端：** 尚未开始。
