@@ -36,7 +36,13 @@ Colors, fonts, spacing and the favicon come from Dennis's design system and go i
 
 ## 3. Screens
 
-### 3.1 Brief (`/`) — concept `01-brief.png`
+### 3.0 Shop (new)
+- Home (`/`): photo hero "Two stores. One look. Yours." with "Post a style brief" and "Browse the shops", a tile for each store, and a "New in" row.
+- All products (`/shop`), stores (`/stores`), one store (`/stores/:storeId`): product grid with filters for category, store, size and price, and a "Not sure? Post a style brief" banner.
+- Product (`/products/:itemId`): photo, price, size buttons (sold-out sizes disabled), "More from" the store, and "Style a look around this", which opens `/brief?item=…&size=…` with the piece written into the brief.
+- All product data comes from the shared catalog `data/catalog.json`; photos are in `public/catalog/`. No cart.
+
+### 3.1 Brief (`/brief`) — concept `01-brief.png`
 - Photo upload: drag/drop or file picker, preview, JPG/PNG only, under 10 MB, clear error text.
 - Consent checkbox, required: "I agree to send this photo to YouCam for try-on processing." Link to a short privacy note.
 - Brief text area plus structured fields: **budget** (number), **occasion**, **sizes** (top/jacket XS–XXL required; bottom optional), **keep** (owned pieces as chips).

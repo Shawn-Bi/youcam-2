@@ -26,7 +26,12 @@ Example brief: *"Silver-and-black concert look, under $120, size M. Keep my boot
 
 The stores are **sample stores** with local catalogs. The app presents them like real stores, with no badge; the README explains once that they are samples. No payments, no live bidding.
 
+**Shared catalog:** both stores' products live in one file, `frontend/data/catalog.json` (24 items with AI-generated product photos in `frontend/public/catalog/`). The shop pages read it directly, and the backend reads the same file to build proposals, so prices, sizes and photos always match. Dennis owns the file; change it together.
+
 ### 2. User flow
+
+**Browse (new):** shoppers who don't want a brief can shop normally: the home page, all products (`/shop`, filter by category, store, size, price), each store's page and a product page with sizes. "Style a look around this" on a product page opens the brief with that piece already written in. There is no cart; buying happens through the proposal flow below.
+
 
 Full detail with diagrams: [look-exchange-user-flow.md](look-exchange-user-flow.md).
 
@@ -123,7 +128,7 @@ type Proposal = {
 | | **Dennis — Frontend** | **Shawn — Backend** |
 | --- | --- | --- |
 | Stack | Next.js + TypeScript + Tailwind, built from the FitFindr agent repo's prototypes | Shawn's choice (Node/TypeScript or Python), must match the contract |
-| Owns | All screens, states, polling, mock data, mobile layout, frontend deploy, demo recording | YouCam account + credits, API key, catalogs, proposal logic, YouCam adapter, video, backend deploy |
+| Owns | All screens, states, polling, mock data, shared catalog and product photos, mobile layout, frontend deploy, demo recording | YouCam account + credits, API key, proposal logic, YouCam adapter, video, backend deploy |
 | Detail | [Frontend PRD](frontend-prd.md) | [Backend PRD (中文)](backend-prd-zh.md) |
 
 **First thing for Shawn:** check whether you already have a YouCam API account. If not, register at [yce.makeupar.com/ai-api](https://yce.makeupar.com/ai-api). Then redeem the hackathon code for 1,000 units and create an API key. Step-by-step instructions are in the backend PRD.
@@ -180,7 +185,12 @@ type Proposal = {
 
 商店均为**示例商店**，使用本地商品目录。应用中按真实商店样式展示，不加标签；README 中统一说明它们是示例。不涉及支付，也没有真实竞价。
 
+**共享商品目录：** 两家商店的商品都在同一个文件 `frontend/data/catalog.json` 中（24 件商品，AI 生成的商品图在 `frontend/public/catalog/`）。购物页面直接读取它，后端也读取同一个文件来生成方案，因此价格、尺码和图片始终一致。该文件由 Dennis 负责，修改时双方一起商量。
+
 ### 2. 用户流程
+
+**浏览（新增）：** 不想写需求的用户可以像普通网店一样购物：首页、全部商品（`/shop`，可按品类、商店、尺码、价格筛选）、每家商店的页面，以及带尺码的商品页。商品页上的“Style a look around this”会打开需求页，并自动写入这件商品。没有购物车；购买通过下面的方案流程完成。
+
 
 详细流程图见 [look-exchange-user-flow.md](look-exchange-user-flow.md)。
 
@@ -252,7 +262,7 @@ React 前端（Dennis）                    后端（Shawn）                   
 | | **Dennis — 前端** | **Shawn — 后端** |
 | --- | --- | --- |
 | 技术栈 | Next.js + TypeScript + Tailwind，基于 FitFindr agent 仓库的原型 | 由 Shawn 选择（Node/TypeScript 或 Python），须符合契约 |
-| 负责 | 所有页面、状态、轮询、模拟数据、移动端布局、前端部署、录制演示 | YouCam 账号与额度、API 密钥、商品目录、方案逻辑、YouCam 适配层、视频、后端部署 |
+| 负责 | 所有页面、状态、轮询、模拟数据、共享商品目录与商品图、移动端布局、前端部署、录制演示 | YouCam 账号与额度、API 密钥、方案逻辑、YouCam 适配层、视频、后端部署 |
 | 详细文档 | [Frontend PRD](frontend-prd.md) | [后端需求文档](backend-prd-zh.md) |
 
 **Shawn 的第一件事：** 确认是否已有 YouCam API 账号。没有的话，在 [yce.makeupar.com/ai-api](https://yce.makeupar.com/ai-api) 注册。然后兑换黑客松的 1,000 单位并创建 API 密钥。具体步骤见后端需求文档。

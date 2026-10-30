@@ -6,7 +6,7 @@
 
 ## 1. 你要做什么
 
-后端负责所有 YouCam 调用、商品目录、方案生成和尺码/预算校验。前端（Dennis）只通过[共享接口契约](look-exchange-prd.md#6-shared-api-contract)与后端通信，从不直接访问 YouCam，也看不到 API 密钥。
+后端负责所有 YouCam 调用、方案生成和尺码/预算校验（商品目录由 Dennis 提供，见第 6 节）。前端（Dennis）只通过[共享接口契约](look-exchange-prd.md#6-shared-api-contract)与后端通信，从不直接访问 YouCam，也看不到 API 密钥。
 
 ## 2. 第一步：YouCam 账号与额度
 
@@ -98,9 +98,13 @@ Dennis 之前在另一个黑客松项目里写过经过测试的 YouCam 适配�
 
 ## 6. 商品目录与方案生成
 
-- 两个 JSON 目录，例如 `catalogs/northline.json`、`catalogs/mono-studio.json`，每家 8–12 件商品即可。
-- 每件商品：`itemId`、`name`、`category`（`top`/`outer`/`bottom`/`bag`）、`price`、`sizesInStock`、`colors`、`styleTags`、`imageUrl`、`productUrl`。
-- 商品图需是有使用权的图片（自己拍、AI 生成或可商用素材），并适合 YouCam 试穿（干净背景、平铺或模特图，按文档要求）。
+- **商品目录已经做好，你不用再做：** 直接读取 `frontend/data/catalog.json`。里面有两家商店（`stores`）和 24 件商品（`items`），每家 12 件。前端的购物页面读同一个文件，所以价格、尺码和图片会一致。需要改目录时先和 Dennis 商量。
+- 每件商品：`itemId`、`storeId`、`name`、`category`（`top`/`outer`/`bottom`/`bag`）、`price`、`sizesInStock`（包袋为空数组）、`colors`、`styleTags`、`imageUrl`、`productUrl`。
+- 商品图是 AI 生成的纯色背景平铺图，放在 `frontend/public/catalog/`，适合 YouCam 试穿。
+- **`imageUrl` 和 `productUrl` 是相对路径**（例如 `/catalog/nl_racer_jacket.jpg`、`/products/nl_racer_jacket`）。返回给前端时原样返回即可。发给 YouCam 时要拼上前端的公开域名，例如 `${FRONTEND_PUBLIC_URL}/catalog/nl_racer_jacket.jpg`（把 `FRONTEND_PUBLIC_URL` 放进环境变量，部署后 Dennis 发给你）。
+- 方案里每个商品的 `itemId` 必须来自目录；前端的模拟数据也使用这些 `itemId`。
+- **围绕指定商品搭配：** 用户在商品页点击“Style a look around this”后，需求文字会是 `Build a look around the {商品名} from {商店名}.`。如果需求文字里出现目录中的商品名，该商店的方案必须包含这件商品（尺码有货时），并替换同位置的单品：上衣和外套算同一个位置，下装和包袋各算一个位置。另一家商店照常搭配。前端模拟数据已按这个规则实现（`frontend/mocks/data.ts`）。
+- 一套方案至少要有一件衣服；只有包袋时按“无匹配”返回，并说明原因。
 - **方案生成用代码规则完成，不依赖模型：**
   1. 按品类筛选，再按用户尺码有货筛选。
   2. 按颜色和风格标签打分（例如“银色”“黑色”“演唱会”）。
@@ -125,7 +129,7 @@ Dennis 之前在另一个黑客松项目里写过经过测试的 YouCam 适配�
 | B2 | 搭建后端项目、`.env.example`、CORS、健康检查 `GET /api/health` | 周五 |
 | B3 | Gate A：一次真实的服装 V4 试穿调用，记录字段、耗时和单位 | 周五 |
 | B4 | 和 Dennis 确认接口契约 | 周五 |
-| B5 | 两个商品目录 + 方案生成 + 尺码/预算校验 | 周六 |
+| B5 | 读取共享商品目录 + 方案生成 + 尺码/预算校验 | 周六 |
 | B6 | 照片上传、预览任务、状态查询接口 | 周六 |
 | B7 | 替换、改尺码、锁定、选择商店接口 | 周六 |
 | B8 | 视频接口（image-to-video V2），确认结果图能否直接作为输入 | 周日 |
