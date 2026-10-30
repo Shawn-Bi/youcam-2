@@ -1,152 +1,78 @@
 {
   "storeId": "mono-studio",
   "storeName": "Mono Studio",
+  "position": 2,
   "sampleStore": true,
   "items": [
     {
-      "itemId": "mono-studio_racer",
-      "name": "Racer jacket (sample illustration)",
+      "itemId": "mono-studio_blazer",
+      "name": "Tailored blazer",
       "category": "outer",
-      "price": 89,
+      "price": 98,
       "sizesInStock": [
         "S",
         "M",
-        "L"
-      ],
-      "colors": [
-        "#202126"
+        "L",
+        "XL"
       ],
       "styleTags": [
-        "concert",
-        "black"
+        "work",
+        "minimal",
+        "black",
+        "formal",
+        "date",
+        "blazer",
+        "office"
       ],
-      "imagePath": "/assets/products/mono-studio_racer.png",
-      "productPath": "/api/catalogs/mono-studio",
+      "imagePath": "/assets/products/mono-studio_blazer.png",
       "imageLicense": "Original project illustration; not a photograph of a real product."
     },
     {
-      "itemId": "mono-studio_vinyl",
-      "name": "Vinyl jacket (sample illustration)",
+      "itemId": "mono-studio_shine",
+      "name": "Shine zip jacket",
       "category": "outer",
-      "price": 72,
-      "sizesInStock": [
-        "S",
-        "M"
-      ],
-      "colors": [
-        "#393c43"
-      ],
-      "styleTags": [
-        "concert",
-        "black"
-      ],
-      "imagePath": "/assets/products/mono-studio_vinyl.png",
-      "productPath": "/api/catalogs/mono-studio",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "mono-studio_tee",
-      "name": "Silver tee (sample illustration)",
-      "category": "top",
-      "price": 35,
+      "price": 78,
       "sizesInStock": [
         "XS",
-        "S",
         "M",
-        "L"
-      ],
-      "colors": [
-        "#bfc3ca"
+        "XL"
       ],
       "styleTags": [
         "concert",
-        "silver"
+        "black",
+        "silver",
+        "party",
+        "night",
+        "jacket"
       ],
-      "imagePath": "/assets/products/mono-studio_tee.png",
-      "productPath": "/api/catalogs/mono-studio",
+      "imagePath": "/assets/products/mono-studio_shine.png",
       "imageLicense": "Original project illustration; not a photograph of a real product."
     },
     {
-      "itemId": "mono-studio_mesh",
-      "name": "Mesh bag (sample illustration)",
-      "category": "bag",
-      "price": 15,
-      "sizesInStock": [],
-      "colors": [
-        "#24262b"
-      ],
-      "styleTags": [
-        "concert",
-        "black"
-      ],
-      "imagePath": "/assets/products/mono-studio_mesh.png",
-      "productPath": "/api/catalogs/mono-studio",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "mono-studio_bomber",
-      "name": "Satin bomber (sample illustration)",
+      "itemId": "mono-studio_satin",
+      "name": "Satin bomber",
       "category": "outer",
       "price": 70,
       "sizesInStock": [
         "M",
         "L"
       ],
-      "colors": [
-        "#48505c"
-      ],
       "styleTags": [
-        "concert",
-        "black"
+        "party",
+        "date",
+        "satin",
+        "champagne",
+        "bomber",
+        "night"
       ],
-      "imagePath": "/assets/products/mono-studio_bomber.png",
-      "productPath": "/api/catalogs/mono-studio",
+      "imagePath": "/assets/products/mono-studio_satin.png",
       "imageLicense": "Original project illustration; not a photograph of a real product."
     },
     {
-      "itemId": "mono-studio_tank",
-      "name": "Concert tank (sample illustration)",
+      "itemId": "mono-studio_knit",
+      "name": "Cream knit tee",
       "category": "top",
-      "price": 28,
-      "sizesInStock": [
-        "S",
-        "M",
-        "L",
-        "XL"
-      ],
-      "colors": [
-        "#19191c"
-      ],
-      "styleTags": [
-        "concert",
-        "black"
-      ],
-      "imagePath": "/assets/products/mono-studio_tank.png",
-      "productPath": "/api/catalogs/mono-studio",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "mono-studio_disc",
-      "name": "Disc bag (sample illustration)",
-      "category": "bag",
-      "price": 18,
-      "sizesInStock": [],
-      "colors": [
-        "#bec2ca"
-      ],
-      "styleTags": [
-        "concert",
-        "silver"
-      ],
-      "imagePath": "/assets/products/mono-studio_disc.png",
-      "productPath": "/api/catalogs/mono-studio",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "mono-studio_cream",
-      "name": "Cream tee (sample illustration)",
-      "category": "top",
-      "price": 32,
+      "price": 38,
       "sizesInStock": [
         "XS",
         "S",
@@ -154,15 +80,128 @@
         "L",
         "XL"
       ],
-      "colors": [
-        "#e8dfce"
+      "styleTags": [
+        "minimal",
+        "casual",
+        "cream",
+        "date",
+        "summer",
+        "tee"
+      ],
+      "imagePath": "/assets/products/mono-studio_knit.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_rib",
+      "name": "White ribbed tank",
+      "category": "top",
+      "price": 24,
+      "sizesInStock": [
+        "XS",
+        "S",
+        "M",
+        "L"
       ],
       "styleTags": [
-        "concert",
-        "black"
+        "white",
+        "minimal",
+        "summer",
+        "casual",
+        "tank"
       ],
-      "imagePath": "/assets/products/mono-studio_cream.png",
-      "productPath": "/api/catalogs/mono-studio",
+      "imagePath": "/assets/products/mono-studio_rib.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_shirt",
+      "name": "Boxy poplin shirt",
+      "category": "top",
+      "price": 46,
+      "sizesInStock": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "styleTags": [
+        "work",
+        "minimal",
+        "grey",
+        "casual",
+        "office",
+        "shirt"
+      ],
+      "imagePath": "/assets/products/mono-studio_shirt.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_tee",
+      "name": "Essential black tee",
+      "category": "top",
+      "price": 26,
+      "sizesInStock": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "styleTags": [
+        "black",
+        "minimal",
+        "casual",
+        "concert",
+        "tee"
+      ],
+      "imagePath": "/assets/products/mono-studio_tee.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_nova",
+      "name": "Nova chain bag",
+      "category": "bag",
+      "price": 30,
+      "sizesInStock": [],
+      "styleTags": [
+        "concert",
+        "silver",
+        "party",
+        "night",
+        "bag"
+      ],
+      "imagePath": "/assets/products/mono-studio_nova.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_tote",
+      "name": "Structured tote",
+      "category": "bag",
+      "price": 48,
+      "sizesInStock": [],
+      "styleTags": [
+        "work",
+        "minimal",
+        "black",
+        "office",
+        "bag"
+      ],
+      "imagePath": "/assets/products/mono-studio_tote.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_camel",
+      "name": "Camel mini bag",
+      "category": "bag",
+      "price": 36,
+      "sizesInStock": [],
+      "styleTags": [
+        "date",
+        "camel",
+        "minimal",
+        "summer",
+        "bag"
+      ],
+      "imagePath": "/assets/products/mono-studio_camel.png",
       "imageLicense": "Original project illustration; not a photograph of a real product."
     }
   ]

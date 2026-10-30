@@ -26,7 +26,7 @@ Look Exchange 中的两家商店及其商品、价格和尺码都是为本次黑
 ## Current state / 当前状态
 
 - **Frontend** ([`frontend/`](frontend/README.md)): Next.js app with the brief screen working on mock data. Other screens are next.
-- **Backend:** not started.
+- **Backend** ([`backend/`](backend/README.md)): FastAPI service implementing the shared API contract, with two sample-store catalogs and unit guards. Verified against simulated YouCam responses; real YouCam calls and deployment are in progress.
 
 - **前端**（[`frontend/`](frontend/README.md)）：Next.js 应用，需求页已可用模拟数据运行，其余页面开发中。
-- **后端：** 尚未开始。
+- **后端**（[`backend/`](backend/README.md)）：FastAPI 服务，已实现共享接口契约，含两家示例商店目录和单位用量上限；已用模拟的 YouCam 响应验证，真实 YouCam 调用和部署进行中。

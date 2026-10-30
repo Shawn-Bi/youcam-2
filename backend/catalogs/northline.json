@@ -1,11 +1,12 @@
 {
   "storeId": "northline",
   "storeName": "Northline",
+  "position": 1,
   "sampleStore": true,
   "items": [
     {
       "itemId": "northline_racer",
-      "name": "Racer jacket (sample illustration)",
+      "name": "Racer zip jacket",
       "category": "outer",
       "price": 89,
       "sizesInStock": [
@@ -13,138 +14,61 @@
         "M",
         "L"
       ],
-      "colors": [
-        "#202126"
+      "styleTags": [
+        "concert",
+        "black",
+        "edgy",
+        "streetwear",
+        "night",
+        "jacket"
+      ],
+      "imagePath": "/assets/products/northline_racer.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "northline_chrome",
+      "name": "Chrome bomber",
+      "category": "outer",
+      "price": 96,
+      "sizesInStock": [
+        "M",
+        "L",
+        "XL"
       ],
       "styleTags": [
         "concert",
-        "black"
+        "silver",
+        "metallic",
+        "party",
+        "shiny",
+        "bomber"
       ],
-      "imagePath": "/assets/products/northline_racer.png",
-      "productPath": "/api/catalogs/northline",
+      "imagePath": "/assets/products/northline_chrome.png",
       "imageLicense": "Original project illustration; not a photograph of a real product."
     },
     {
       "itemId": "northline_vinyl",
-      "name": "Vinyl jacket (sample illustration)",
+      "name": "Cropped vinyl jacket",
       "category": "outer",
       "price": 72,
       "sizesInStock": [
         "S",
         "M"
       ],
-      "colors": [
-        "#393c43"
-      ],
       "styleTags": [
         "concert",
-        "black"
+        "black",
+        "glossy",
+        "edgy",
+        "night",
+        "party"
       ],
       "imagePath": "/assets/products/northline_vinyl.png",
-      "productPath": "/api/catalogs/northline",
       "imageLicense": "Original project illustration; not a photograph of a real product."
     },
     {
       "itemId": "northline_tee",
-      "name": "Silver tee (sample illustration)",
-      "category": "top",
-      "price": 35,
-      "sizesInStock": [
-        "XS",
-        "S",
-        "M",
-        "L"
-      ],
-      "colors": [
-        "#bfc3ca"
-      ],
-      "styleTags": [
-        "concert",
-        "silver"
-      ],
-      "imagePath": "/assets/products/northline_tee.png",
-      "productPath": "/api/catalogs/northline",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "northline_mesh",
-      "name": "Mesh bag (sample illustration)",
-      "category": "bag",
-      "price": 15,
-      "sizesInStock": [],
-      "colors": [
-        "#24262b"
-      ],
-      "styleTags": [
-        "concert",
-        "black"
-      ],
-      "imagePath": "/assets/products/northline_mesh.png",
-      "productPath": "/api/catalogs/northline",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "northline_bomber",
-      "name": "Satin bomber (sample illustration)",
-      "category": "outer",
-      "price": 70,
-      "sizesInStock": [
-        "M",
-        "L"
-      ],
-      "colors": [
-        "#48505c"
-      ],
-      "styleTags": [
-        "concert",
-        "black"
-      ],
-      "imagePath": "/assets/products/northline_bomber.png",
-      "productPath": "/api/catalogs/northline",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "northline_tank",
-      "name": "Concert tank (sample illustration)",
-      "category": "top",
-      "price": 28,
-      "sizesInStock": [
-        "S",
-        "M",
-        "L",
-        "XL"
-      ],
-      "colors": [
-        "#19191c"
-      ],
-      "styleTags": [
-        "concert",
-        "black"
-      ],
-      "imagePath": "/assets/products/northline_tank.png",
-      "productPath": "/api/catalogs/northline",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "northline_disc",
-      "name": "Disc bag (sample illustration)",
-      "category": "bag",
-      "price": 18,
-      "sizesInStock": [],
-      "colors": [
-        "#bec2ca"
-      ],
-      "styleTags": [
-        "concert",
-        "silver"
-      ],
-      "imagePath": "/assets/products/northline_disc.png",
-      "productPath": "/api/catalogs/northline",
-      "imageLicense": "Original project illustration; not a photograph of a real product."
-    },
-    {
-      "itemId": "northline_cream",
-      "name": "Cream tee (sample illustration)",
+      "name": "Graphic tee",
       "category": "top",
       "price": 32,
       "sizesInStock": [
@@ -154,15 +78,126 @@
         "L",
         "XL"
       ],
-      "colors": [
-        "#e8dfce"
+      "styleTags": [
+        "concert",
+        "black",
+        "casual",
+        "streetwear",
+        "tee"
+      ],
+      "imagePath": "/assets/products/northline_tee.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "northline_mesh_tank",
+      "name": "Silver mesh tank",
+      "category": "top",
+      "price": 28,
+      "sizesInStock": [
+        "S",
+        "M",
+        "L",
+        "XL"
       ],
       "styleTags": [
         "concert",
-        "black"
+        "silver",
+        "party",
+        "summer",
+        "tank"
       ],
-      "imagePath": "/assets/products/northline_cream.png",
-      "productPath": "/api/catalogs/northline",
+      "imagePath": "/assets/products/northline_mesh_tank.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "northline_hoodie",
+      "name": "Oversized hoodie",
+      "category": "top",
+      "price": 54,
+      "sizesInStock": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "styleTags": [
+        "casual",
+        "comfy",
+        "streetwear",
+        "grey",
+        "hoodie",
+        "winter"
+      ],
+      "imagePath": "/assets/products/northline_hoodie.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "northline_rib_tank",
+      "name": "Red rib tank",
+      "category": "top",
+      "price": 26,
+      "sizesInStock": [
+        "XS",
+        "S",
+        "M",
+        "L"
+      ],
+      "styleTags": [
+        "red",
+        "party",
+        "summer",
+        "date",
+        "tank"
+      ],
+      "imagePath": "/assets/products/northline_rib_tank.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "northline_disc",
+      "name": "Disc crossbody bag",
+      "category": "bag",
+      "price": 18,
+      "sizesInStock": [],
+      "styleTags": [
+        "concert",
+        "silver",
+        "party",
+        "night",
+        "bag"
+      ],
+      "imagePath": "/assets/products/northline_disc.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "northline_mini",
+      "name": "Mesh mini bag",
+      "category": "bag",
+      "price": 15,
+      "sizesInStock": [],
+      "styleTags": [
+        "concert",
+        "black",
+        "night",
+        "bag"
+      ],
+      "imagePath": "/assets/products/northline_mini.png",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "northline_chain",
+      "name": "Chain shoulder bag",
+      "category": "bag",
+      "price": 34,
+      "sizesInStock": [],
+      "styleTags": [
+        "black",
+        "silver",
+        "party",
+        "night",
+        "date",
+        "bag"
+      ],
+      "imagePath": "/assets/products/northline_chain.png",
       "imageLicense": "Original project illustration; not a photograph of a real product."
     }
   ]

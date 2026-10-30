@@ -9,16 +9,43 @@ python -m venv .venv
 .venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
-On Windows use `.venv\Scripts\python.exe` and the corresponding `pip.exe` and `uvicorn.exe` paths. Set environment variables in the shell or hosting platform. `.env.example` documents names; `.env` is not loaded automatically.
+On Windows use `.venv\Scripts\python.exe` and the corresponding `pip.exe` and `uvicorn.exe` paths. Run one worker only: all state is in memory.
 
-`GET /api/health` returns `{"status":"ok"}`. Set `FRONTEND_ORIGINS` to comma-separated exact frontend origins (no trailing slash). Default allows only `http://localhost:3000`. Set `YOUCAM_API_KEY` securely on the deployment platform. Never commit it.
+## Configuration
 
-Routes follow `docs/look-exchange-prd.md` section 6. Previews and videos run in asynchronous background jobs with a 180-second deadline. Repeated active requests reuse existing job IDs. Videos require a selected proposal and successful preview of its current version. Videos are fixed at 5 seconds / 480p. Bag try-on is not implemented.
+Copy `.env.example` to `.env` (git-ignored) or set the variables on the hosting platform. A real environment variable always wins over `.env`. Tests ignore `.env` and any real key, so they cannot spend YouCam units.
 
-## Current limitations
+| Variable | Purpose |
+| --- | --- |
+| `YOUCAM_API_KEY` | YouCam key. Without it previews and videos return 503. Never commit it. |
+| `FRONTEND_ORIGINS` | Comma-separated exact frontend origins, no trailing slash. Default `http://localhost:3000`. |
+| `FRONTEND_ORIGIN_REGEX` | Optional pattern for preview deployments, for example `https://youcam-.*\.vercel\.app`. |
+| `PUBLIC_BASE_URL` | Public backend origin used in item image and product links. Falls back to Render's `RENDER_EXTERNAL_URL`, then `http://localhost:8000`. |
+| `SESSION_PREVIEW_LIMIT`, `SESSION_VIDEO_LIMIT`, `DAILY_TASK_LIMIT`, `DAILY_VIDEO_LIMIT` | Unit guards, see below. Defaults 6, 2, 40, 10. |
+| `SESSION_PREVIEW_ATTEMPTS`, `SESSION_VIDEO_ATTEMPTS`, `DAILY_ATTEMPT_LIMIT` | Hard caps on tries including failed ones. Defaults 12, 4, 150. |
 
-This is not production-ready. Catalogs contain eight original sample illustrations per store. They are not photographs of real merchandise and their suitability for YouCam is unverified. Product links point to sample catalog JSON; there is no real checkout. Set PUBLIC_BASE_URL to the public backend origin so YouCam can retrieve the reference images. Real YouCam output parsing and generation have not been validated against a paid task.
+`GET /api/health` returns `{"status":"ok","youcamConfigured":true|false}`.
 
-Session data lives in memory, expires after one hour on API activity, and is lost on restart. Run one worker only. Attempt limits are four clothing tasks and one video per uploaded-photo session, plus 30 total tasks per UTC day. Limits reset on server restart and new photo uploads create new sessions; they do not provide durable abuse prevention. Failed attempts count toward limits to bound retries.
+## API
 
-`render.yaml` is a proposed Render free-service configuration, not proof of deployment. Render free services can sleep and lose in-memory state. Configure real secrets directly in Render; cloud-development proxy credentials must not be copied into Render configuration.
+Routes follow the shared contract in `docs/look-exchange-prd.md` section 6 and the integration notes in `docs/backend-prd-zh.md` section 5.1.
+
+- Uploaded photos are decoded, rotated upright, stripped of metadata (including location), flattened to RGB and capped at 2048 px, then kept as JPEG for one hour. Photos under 512 px, wider than 2.5:1, or over 10 MB are refused with `422 {"errors":{"photo":…}}`.
+- Proposals are built by rules in `catalog.py`, never by a model: items in the shopper's size, within budget, scored by style tags in the brief. Each store has its own catalog, so the two proposals differ.
+- Previews upload the shopper's photo and the product illustration to YouCam and run clothes try-on V4 (`upper_body` for tops, `outer` for jackets). Bag try-on is not implemented.
+- Videos are 5 seconds at 480p. They require a selected proposal and a successful preview of an item that is still in it. The try-on result is downloaded and re-uploaded to YouCam, with the result URL as a fallback.
+- A size change does not invalidate a preview: try-on shows appearance only. Replacing an item gives it a new `itemId`, which needs its own preview.
+- Task records live for an hour after last use, so a client can poll the same `previewId` or `videoId` again without paying for a new task.
+- `GET /shop/{storeId}/{itemId}` is the sample product page that `productUrl` points to.
+
+## Unit guards
+
+YouCam charges only for successful tasks. A session is one uploaded photo. Per session the defaults allow 6 running or successful try-ons and 2 videos; a failed task gives its slot back, while the attempt caps still bound retries. Per UTC day the defaults allow 40 tasks and 10 videos. Limits reset when the server restarts and a new upload starts a new session, so they are a guard rail, not abuse prevention.
+
+## Sample catalogs
+
+`catalogs/*.json` and `static/products/*.png` are generated by `tools/make_catalog.py`. The two stores and every item are samples for the demo; nothing can be bought. The illustrations are original artwork, not photographs of real merchandise. Edit the specs in the script and run `python tools/make_catalog.py` to change them.
+
+## Limitations
+
+Session data lives in memory and is lost on restart. `render.yaml` is a proposed Render free-service configuration; free services sleep after idle time and lose state when they do.
