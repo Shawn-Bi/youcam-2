@@ -122,7 +122,7 @@ type Proposal = {
 
 | | **Dennis — Frontend** | **Shawn — Backend** |
 | --- | --- | --- |
-| Stack | React (Vite + TypeScript), based on the FitFindr agent repo | Shawn's choice (Node/TypeScript or Python), must match the contract |
+| Stack | Next.js + TypeScript + Tailwind, built from the FitFindr agent repo's prototypes | Shawn's choice (Node/TypeScript or Python), must match the contract |
 | Owns | All screens, states, polling, mock data, mobile layout, frontend deploy, demo recording | YouCam account + credits, API key, catalogs, proposal logic, YouCam adapter, video, backend deploy |
 | Detail | [Frontend PRD](frontend-prd.md) | [Backend PRD (中文)](backend-prd-zh.md) |
 
@@ -132,14 +132,14 @@ type Proposal = {
 
 | Day | Dennis (frontend) | Shawn (backend) | Together |
 | --- | --- | --- | --- |
-| **Fri Oct 30** | Get FitFindr agent repo access; scaffold React app; brief screen on mocks | YouCam account, credits, API key; one real clothes try-on call (Gate A) | Agree the contract above |
+| **Fri Oct 30** | Scaffold Next.js app with the design tokens; brief screen on mocks | YouCam account, credits, API key; one real clothes try-on call (Gate A) | Agree the contract above |
 | **Sat Oct 31** | Proposals, preview, revise screens on mocks | Catalogs, proposal builder, sizes, preview endpoints | Confirm one real preview end to end |
 | **Sun Nov 1** | Video screen, error states, mobile pass, deploy | Video endpoint, unit cap, deploy, CORS | Connect deployed frontend to deployed backend; full test |
 | **Mon Nov 2** | Record demo video | Standby for fixes | Submit on Devpost by 9:00 AM EST (deadline 11:45 AM) |
 
 ### 9. FitFindr
 
-- **Frontend base:** Dennis builds the React frontend on top of Shawn's **FitFindr agent** repo, with Shawn's permission. The repo is currently private or unavailable (404); Shawn will restore access. Until then, Dennis scaffolds a plain React app and moves components over once access is back.
+- **Frontend base:** with Shawn's permission, Dennis uses Shawn's private **FitFindr agent** repo as the frontend base. It has no frontend code yet, so Dennis starts a fresh Next.js + Tailwind app (FitFindr's planned stack) and rebuilds its approved prototype screens, layout patterns and UI rules. See the [frontend PRD](frontend-prd.md#what-to-take-from-fitfindr).
 - **Backend:** Shawn is not reusing FitFindr for the backend.
 - Nothing from FitFindr that contains secrets, user data or API keys is copied.
 
@@ -251,7 +251,7 @@ React 前端（Dennis）                    后端（Shawn）                   
 
 | | **Dennis — 前端** | **Shawn — 后端** |
 | --- | --- | --- |
-| 技术栈 | React（Vite + TypeScript），以 FitFindr agent 仓库为基础 | 由 Shawn 选择（Node/TypeScript 或 Python），须符合契约 |
+| 技术栈 | Next.js + TypeScript + Tailwind，基于 FitFindr agent 仓库的原型 | 由 Shawn 选择（Node/TypeScript 或 Python），须符合契约 |
 | 负责 | 所有页面、状态、轮询、模拟数据、移动端布局、前端部署、录制演示 | YouCam 账号与额度、API 密钥、商品目录、方案逻辑、YouCam 适配层、视频、后端部署 |
 | 详细文档 | [Frontend PRD](frontend-prd.md) | [后端需求文档](backend-prd-zh.md) |
 
@@ -261,14 +261,14 @@ React 前端（Dennis）                    后端（Shawn）                   
 
 | 日期 | Dennis（前端） | Shawn（后端） | 共同 |
 | --- | --- | --- | --- |
-| **周五 10/30** | 获取 FitFindr agent 仓库权限；搭建 React 项目；需求页（模拟数据） | YouCam 账号、额度、API 密钥；完成一次真实服装试穿调用（Gate A） | 确认上面的接口契约 |
+| **周五 10/30** | 搭建含设计规范的 Next.js 项目；需求页（模拟数据） | YouCam 账号、额度、API 密钥；完成一次真实服装试穿调用（Gate A） | 确认上面的接口契约 |
 | **周六 10/31** | 方案、预览、修改页面（模拟数据） | 商品目录、方案生成、尺码、预览接口 | 端到端跑通一次真实预览 |
 | **周日 11/1** | 视频页面、错误状态、移动端检查、部署 | 视频接口、用量上限、部署、CORS | 已部署前后端联调，完整测试 |
 | **周一 11/2** | 录制演示视频 | 随时修复问题 | 美东上午 9:00 前在 Devpost 提交（截止 11:45） |
 
 ### 9. FitFindr
 
-- **前端基础：** 经 Shawn 许可，Dennis 以 Shawn 的 **FitFindr agent** 仓库为基础开发 React 前端。该仓库目前为私有或不可访问（404），Shawn 会恢复访问权限。在此之前，Dennis 先搭建普通 React 项目，权限恢复后再迁移组件。
+- **前端基础：** 经 Shawn 许可，Dennis 以 Shawn 的私有 **FitFindr agent** 仓库作为前端基础。该仓库还没有前端代码，因此 Dennis 新建 Next.js + Tailwind 项目（FitFindr 计划使用的技术栈），并按其已确认的原型页面、布局模式和界面规范重建。详见 [Frontend PRD](frontend-prd.md#what-to-take-from-fitfindr)。
 - **后端：** Shawn 的后端不复用 FitFindr。
 - 不复制 FitFindr 中任何密钥、用户数据或 API key。
 

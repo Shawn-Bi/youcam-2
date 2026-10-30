@@ -1,6 +1,6 @@
 # Look Exchange — Frontend PRD
 
-**Owner:** Dennis · **Version:** 1.0 · October 30, 2026
+**Owner:** Dennis · **Version:** 1.1 · October 30, 2026 — Next.js + Tailwind, based on FitFindr's prototypes
 **Parent:** [Look Exchange PRD](look-exchange-prd.md) · **Flow:** [User flow](look-exchange-user-flow.md) · **Mockups:** [concepts/](concepts/)
 **Deadline:** November 2, 2026, 11:45 AM EST
 
@@ -10,16 +10,29 @@ The whole user-facing app: a responsive React site where a shopper posts a brief
 
 ## 2. Stack
 
-- **React + Vite + TypeScript.**
-- **Base:** Shawn's FitFindr agent repo (permission granted; access pending while the repo is 404). When you get access:
-  1. Check its stack (React version, router, styling, state library) and what UI already exists.
-  2. Reuse layout, components and styles that fit. Leave out anything tied to FitFindr's own backend, accounts or secrets.
-  3. If it isn't React, port only the visual pieces.
-  Until access arrives, scaffold a plain app (`npm create vite@latest -- --template react-ts`) so you aren't blocked.
-- **Routing:** React Router (or whatever FitFindr uses).
-- **Data fetching:** plain `fetch` wrapped in a small `api.ts`, or TanStack Query if FitFindr already has it. Polling is the main need.
-- **Styling:** match the concept images: warm off-white background, black type, silver accent, rounded cards.
-- **Config:** `VITE_API_BASE_URL` for the backend URL. No secrets in the frontend, ever.
+- **Next.js (App Router) + TypeScript + Tailwind CSS**, the same stack FitFindr plans, so screens can move into FitFindr later. Deploy on Vercel.
+- **Start fresh:** `npx create-next-app@latest frontend --ts --tailwind --app --eslint`. The FitFindr agent repo (private; Shawn granted access) has no frontend code yet, so there is nothing to fork.
+- **Data fetching:** plain `fetch` wrapped in a small `lib/api.ts`. Pages that poll are client components (`"use client"`). Polling is the main need.
+- **Config:** `NEXT_PUBLIC_API_BASE_URL` for the backend URL. No secrets in the frontend, ever.
+
+### What to take from FitFindr
+
+The FitFindr agent repo is the visual base. Use:
+
+| FitFindr source | Use it for |
+| --- | --- |
+| `docs/prototype/*.dc.html` — approved HTML screens | Copy layout, spacing and component patterns. Ignore the `<x-dc>` / `DCLogic` wrapper. `Results.dc.html` / `DesktopResults.dc.html` → proposal cards; `ItemDetail.dc.html` → item rows on the revise panel; `Home.dc.html` → brief screen |
+| UI rules | 375 px with no horizontal scroll; multi-column at 1280 px; touch targets ≥ 44 px; contrast ≥ 4.5:1; real `<button>`, `<a>`, `<label>` |
+| Empty-results pattern (its `DECISIONS.md` #17) | No-match state: show what was searched + one-click "Remove size" / "Raise budget" |
+| `docs/legal/privacy.md` | Starting point for the photo-consent privacy note |
+
+Leave out: FitFindr's color tokens (Look Exchange has its own design system), Supabase auth, closet, profile and sign-up screens, its resale-store search, and its Python/Gemini backend. Copy no keys or `.env` values.
+
+Our [concept images](concepts/) show the screens and flow.
+
+### Visual design
+
+Colors, fonts, spacing and the favicon come from Dennis's design system and go into the Tailwind theme and `app/` as part of task F1. Screens use token names, never raw hex values.
 
 ## 3. Screens
 
@@ -34,7 +47,7 @@ The whole user-facing app: a responsive React site where a shopper posts a brief
 - Two cards side by side on desktop, stacked on mobile.
 - Each card: store name + **"Sample store"** badge, item photos with name, **size**, price; "Kept: your boots" chip; subtotal; styling note; **Preview on me**; **Pick this store**.
 - While the backend is building: a skeleton card per store with "Building a proposal…".
-- No-match: the store's card says it found nothing and offers "Edit brief".
+- No-match: the store's card shows what was searched and offers **Remove size**, **Raise budget** and **Edit brief** (FitFindr's empty-results pattern).
 
 ### 3.3 Preview & revise (`/proposals/:briefId/:proposalId`) — concept `03-preview-revise.png`
 - Left: the try-on image labeled **"AI-generated preview"**. Next to it: the product photo labeled **"Product photo"**.
@@ -70,13 +83,13 @@ Every screen handles: loading, empty/no match, validation error, API failure, ti
 ## 6. Mock mode
 
 Build against mocks first so you aren't blocked by the backend:
-- `src/mocks/` holds JSON that matches the contract types exactly (copy `Item` and `Proposal` from the main PRD into `src/types.ts`).
-- `VITE_USE_MOCKS=true` swaps `api.ts` to return mocks with fake delays, including one failing preview so you can build error states.
+- `mocks/` holds JSON that matches the contract types exactly (copy `Item` and `Proposal` from the main PRD into `lib/types.ts`).
+- `NEXT_PUBLIC_USE_MOCKS=true` swaps `lib/api.ts` to return mocks with fake delays, including one failing preview so you can build error states.
 - Switch to the real backend as soon as Shawn's endpoints are deployed.
 
 ## 7. Quality bar
 
-- Works at 375 px phone width and desktop; no horizontal scroll.
+- FitFindr's UI rules (section 2): 375 px with no horizontal scroll, multi-column desktop, 44 px touch targets, 4.5:1 contrast.
 - Keyboard reachable; images have alt text; buttons have clear labels.
 - AI labels on every generated image and video. No claims about exact fit.
 - Photo stays in memory/upload only; nothing stored in `localStorage`.
@@ -85,8 +98,8 @@ Build against mocks first so you aren't blocked by the backend:
 
 | # | Task | Day |
 | --- | --- | --- |
-| F1 | Request FitFindr agent repo access from Shawn; scaffold React + Vite + TS meanwhile | Fri |
-| F2 | `types.ts` + mocks from the contract; `api.ts` with mock switch | Fri |
+| F1 | Scaffold Next.js + TS + Tailwind; add the design-system tokens, fonts and favicon | Fri |
+| F2 | `lib/types.ts` + mocks from the contract; `lib/api.ts` with mock switch | Fri |
 | F3 | Brief screen with validation and consent | Fri |
 | F4 | Proposals screen with loading and no-match states | Sat |
 | F5 | Preview & revise: lock, replace, size picker, subtotal, outdated previews | Sat |
@@ -94,7 +107,7 @@ Build against mocks first so you aren't blocked by the backend:
 | F7 | Pick a store + video panel | Sun |
 | F8 | Saved screen | Sun |
 | F9 | Switch to the real backend; fix contract mismatches with Shawn | Sun |
-| F10 | Mobile + accessibility pass; deploy (Vercel or Netlify) with `VITE_API_BASE_URL` | Sun |
+| F10 | Mobile + accessibility pass; deploy on Vercel with `NEXT_PUBLIC_API_BASE_URL` | Sun |
 | F11 | Screenshots + 1–3 min demo video on YouTube, naming the YouCam APIs used | Mon AM |
 
 ## 9. Done means
