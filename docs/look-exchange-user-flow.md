@@ -17,7 +17,7 @@ Companion to the [Look Exchange PRD](look-exchange-prd.md). Concept images are i
 ```mermaid
 flowchart TD
     A[Landing: Post a look brief] --> B[Upload photo + consent]
-    B --> C[Write brief: style, budget, sizes, pieces to keep]
+    B --> C[Describe the look in one sentence, list pieces to keep]
     C --> D{Brief valid?}
     D -- No --> C
     D -- Yes --> E[Four stores build proposals]
@@ -54,9 +54,9 @@ flowchart TD
 
 **3. Write the brief**
 - Free-text brief, for example: “Silver-and-black concert look, under $120. Keep my boots.”
-- Structured fields beside it: budget, occasion, style words, sizes, and owned pieces to keep.
+- No separate fields: a size and budget mentioned in the sentence are picked up automatically. Owned pieces to keep are added as chips.
 - **Sizes:** the shopper picks their usual size for each category they want proposed: tops/jackets (XS–XXL) and, if relevant, bottoms (waist or XS–XXL). Bags need no size. Sizes are required before stores search.
-- The backend turns the brief into structured data. If a required part is missing or unclear (no budget, impossible budget, no size), the shopper is asked to fix it before stores search.
+- Budget and size are optional. With no budget there is no price cap; with no size, each proposal lists the sizes in stock and the shopper chooses one before picking a store.
 
 **4. Stores build proposals**
 - Four sample stores each assemble one proposal from their own catalog. The app shows them like real stores; the README explains they are samples.
@@ -120,7 +120,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     A[首页：发布穿搭需求] --> B[上传照片并同意授权]
-    B --> C[填写需求：风格、预算、尺码、保留单品]
+    B --> C[用一句话描述造型，列出保留单品]
     C --> D{需求有效？}
     D -- 否 --> C
     D -- 是 --> E[四家商店生成方案]
@@ -157,9 +157,9 @@ flowchart TD
 
 **3. 填写需求**
 - 自由文本需求，例如：“银黑色演唱会造型，预算 120 美元以内，保留我自己的靴子。”
-- 旁边提供结构化字段：预算、场合、风格关键词、尺码、要保留的自有单品。
+- 不再有单独字段：句子里提到的尺码和预算会被自动读取。要保留的自有单品以标签形式添加。
 - **尺码：** 用户为需要推荐的每个品类选择常穿尺码：上衣/外套（XS–XXL），如需下装则选择腰围或 XS–XXL。包袋无需尺码。开始检索前必须填写尺码。
-- 后端将需求转为结构化数据。若缺少必要信息或信息不明确（没有预算、预算不可行、没有尺码），先请用户修改，再开始检索。
+- 预算和尺码都是可选的。没有预算时不限价格；没有尺码时，每个方案列出有货尺码，用户在选择商店前选好尺码。
 
 **4. 商店生成方案**
 - 四家示例商店各自从自己的目录组装一个方案。应用中按真实商店样式展示；README 中说明它们是示例。

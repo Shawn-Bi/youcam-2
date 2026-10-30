@@ -70,7 +70,7 @@ Dennis 之前在另一个黑客松项目里写过经过测试的 YouCam 适配�
 | 接口 | 后端要做的事 |
 | --- | --- |
 | `POST /api/photos` | 校验 `consent=true`、JPG/PNG、小于 10 MB；保存在内存或临时目录；返回 `photoId` |
-| `POST /api/briefs` | 校验预算、上衣尺码等必填项（不合格返回 `422` 和字段错误）；为四家商店各生成一个方案 |
+| `POST /api/briefs` | 校验照片、同意和需求文字（不合格返回 `422` 和字段错误）；预算和尺码可选；为四家商店各生成一个方案 |
 | `PATCH /api/proposals/:id/items/:itemId` | 改尺码或锁定状态；尺码无货时返回 `409 out_of_stock` 和同尺码替代品 |
 | `POST /api/proposals/:id/replace` | 保留锁定商品，替换指定商品，重新计算小计，`version + 1` |
 | `POST /api/proposals/:id/previews` | 上传照片和商品图，创建服装（或包袋）试穿任务，返回 `previewId` |
@@ -88,7 +88,8 @@ Dennis 之前在另一个黑客松项目里写过经过测试的 YouCam 适配�
 1. **CORS：** 允许前端的 Vercel 域名（部署后 Dennis 发给你）和本地 `http://localhost:3000`。需要允许 `GET`、`POST`、`PATCH` 方法和 `Content-Type` 请求头。前端不发送 cookie。
 2. **照片上传：** `POST /api/photos` 使用 `multipart/form-data`，字段名是 `photo`（文件）和 `consent`（字符串 `"true"`）。其他接口都是 JSON。
 3. **图片和视频必须是公开 URL：** 商品 `imageUrl`、试穿结果 `imageUrl`、视频 `videoUrl` 都由浏览器直接加载，不能需要密钥或登录。YouCam 也要通过 URL 读取照片和商品图。如果返回 YouCam 的签名 URL，要确保它在会话期间（约 1 小时）不会过期，否则请转存后再返回。
-4. **`422` 字段错误：** 返回 `{ "errors": { "字段": "提示文字" } }`。前端只认这几个字段名：`photo`、`consent`、`text`、`budget`、`topSize`，提示文字会直接显示给用户，请用英文写。
+4. **`422` 字段错误：** 返回 `{ "errors": { "字段": "提示文字" } }`。前端只认这几个字段名：`photo`、`consent`、`text`，提示文字会直接显示给用户，请用英文写。
+5. **预算和尺码变为可选：** 需求页不再有预算、场合和尺码字段。前端会从需求文字中读取尺码和预算，读到才发送 `budget` 和 `sizes.top`。没有 `budget` 时不限价格；没有尺码时，方案照常返回，衣服的 `size` 设为 `null`（包袋仍为 `null`），用户会在方案页选择尺码，再通过 `PATCH /api/proposals/:id/items/:itemId` 发送 `{ size }`。不要因为缺少预算或尺码返回 `422`。前端模拟数据已按这个规则实现。
 5. **`409` 尺码无货：** 必须是 `{ "code": "out_of_stock", "alternatives": Item[] }`。`code` 不对的话，前端只会显示通用错误。
 6. **其他错误：** 任何其他非 2xx 响应，前端都显示通用提示“Something went wrong”。
 7. **替换商品：** 替换后的商品必须有新的 `itemId`。前端靠新 `itemId` 判断哪件被替换了，并要求用户重新生成试穿预览。

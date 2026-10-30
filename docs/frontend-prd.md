@@ -45,8 +45,9 @@ Colors, fonts, spacing and the favicon come from Dennis's design system and go i
 ### 3.1 Brief (`/brief`) — concept `01-brief.png`
 - Photo upload: drag/drop or file picker, preview, JPG/PNG only, under 10 MB, clear error text.
 - Consent checkbox, required: "I agree to send this photo to YouCam for try-on processing." Link to a short privacy note.
-- Brief text area plus structured fields: **budget** (number), **occasion**, **sizes** (top/jacket XS–XXL required; bottom optional), **keep** (owned pieces as chips).
-- "Get proposals" disabled until photo, consent, budget and top size are set.
+- Layout (concept C2): title "Tell us the look" centered; full-body photo on the left with the consent line under it; on the right, one sentence "The look you want" and "Pieces you already own and want to keep" (chips). Fits one desktop screen.
+- No budget, occasion or size fields. `lib/parseBrief.ts` reads a size ("in size S", "I wear a medium") and a budget ("under $120", "80 dollars") from the sentence and shows "We'll use: Size S · Up to $120" under it. Without a size, proposal cards list the sizes in stock and the shopper chooses one before "Pick this store".
+- "Get proposals" needs a photo, consent and the sentence.
 - Calls `POST /api/photos` then `POST /api/briefs`. Show `422` field errors next to the right field.
 
 ### 3.2 Proposals (`/proposals/:briefId`) — concept `02-proposals.png`
