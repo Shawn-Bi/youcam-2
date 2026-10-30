@@ -8,7 +8,7 @@ import { VideoPanel } from "@/components/VideoPanel";
 import { ApiError, OutOfStockError, replaceItem, selectProposal, startPreview, updateItem } from "@/lib/api";
 import { loadBrief, loadPreviews, savePreviews, saveProposal } from "@/lib/briefStore";
 import { formatPrice } from "@/lib/format";
-import { mainItem } from "@/lib/items";
+import { mainItem, needsSize } from "@/lib/items";
 import type { Item, Proposal } from "@/lib/types";
 
 
@@ -33,7 +33,7 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
     setProposal(found);
     if (!stored || !found) return;
     document.title = `${found.storeName} · Look Exchange`;
-    setBudget(stored.input.budget);
+    setBudget(stored.input.budget ?? 0);
     const first = mainItem(found);
     setViewingId(first?.itemId ?? null);
     const saved = loadPreviews(found.id);
@@ -111,6 +111,10 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
 
   async function pick() {
     if (!proposal) return;
+    if (needsSize(proposal)) {
+      setError("Choose a size for each piece first.");
+      return;
+    }
     const next = await run(() => selectProposal(proposal), "We couldn't pick this store. Try again.");
     if (next) commit(next);
   }

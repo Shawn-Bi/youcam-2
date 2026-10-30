@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
-import { mainItem } from "@/lib/items";
-import type { Proposal } from "@/lib/types";
+import { mainItem, needsSize } from "@/lib/items";
+import type { Item, Proposal } from "@/lib/types";
 import { ProductImage } from "./ProductImage";
 
 const chip = "rounded-full bg-sand px-3 py-1 text-label font-medium text-on-sand";
@@ -15,6 +15,10 @@ const STORE_DOT: Record<string, string> = {
   "sol-social": "bg-terracotta",
   haven: "bg-sand",
 };
+
+/** "Size M", "One size", or the sizes in stock when the shopper hasn't chosen yet. */
+export const sizeLabel = (item: Item) =>
+  item.sizesInStock.length === 0 ? "One size" : item.size ? `Size ${item.size}` : `Sizes ${item.sizesInStock.join(", ")}`;
 
 type Props = {
   proposal: Proposal;
@@ -48,7 +52,7 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-1 py-1">
                 <p className="text-small font-medium text-ink">{item.name}</p>
-                <p className="text-small text-muted">{item.size ? `Size ${item.size}` : "One size"}</p>
+                <p className="text-small text-muted">{sizeLabel(item)}</p>
                 <p className="font-display text-price text-ink tabular-nums">{formatPrice(item.price)}</p>
               </div>
             </li>
@@ -82,7 +86,7 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
             Preview on me
           </button>
           <button type="button" onClick={onPick} disabled={busy} className={`${button} bg-sage text-on-sage hover:bg-sage-hover`}>
-            {busy ? "Picking…" : "Pick this store"}
+            {busy ? "Picking…" : needsSize(proposal) ? "Choose sizes" : "Pick this store"}
           </button>
         </div>
       </div>
@@ -92,8 +96,9 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
 
 type NoMatchProps = {
   proposal: Proposal;
-  budget: number;
-  nextBudget: number;
+  budget?: number;
+  /** Missing when the brief named no budget, so raising it can't help. */
+  nextBudget?: number;
   busy: boolean;
   onRaiseBudget: () => void;
 };
@@ -114,19 +119,21 @@ export function NoMatchCard({ proposal, budget, nextBudget, busy, onRaiseBudget 
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
-          onClick={onRaiseBudget}
-          disabled={busy}
-          className={`${button} bg-sage text-on-sage hover:bg-sage-hover`}
-        >
-          {busy ? "Asking again…" : `Raise budget to ${formatPrice(nextBudget)}`}
-        </button>
+        {nextBudget && (
+          <button
+            type="button"
+            onClick={onRaiseBudget}
+            disabled={busy}
+            className={`${button} bg-sage text-on-sage hover:bg-sage-hover`}
+          >
+            {busy ? "Asking again…" : `Raise budget to ${formatPrice(nextBudget)}`}
+          </button>
+        )}
         <Link href="/brief" className={`${button} flex items-center justify-center border border-line text-ink hover:bg-sage-tint`}>
           Edit brief
         </Link>
       </div>
-      <p className="sr-only">Current budget {formatPrice(budget)}.</p>
+      {budget && <p className="sr-only">Current budget {formatPrice(budget)}.</p>}
     </article>
   );
 }

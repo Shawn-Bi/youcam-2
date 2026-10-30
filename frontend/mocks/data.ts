@@ -38,10 +38,13 @@ const plansFor = (key: string): Plan[] => [
   },
 ];
 
-const sizeFor = (item: CatalogItem, input: BriefInput) =>
-  item.category === "bottom" ? (input.sizes.bottom ?? input.sizes.top) : input.sizes.top;
-const fits = (item: CatalogItem, input: BriefInput) =>
-  item.sizesInStock.length === 0 || item.sizesInStock.includes(sizeFor(item, input));
+// No size in the brief: any piece fits, and the shopper chooses a size on the proposal page.
+const sizeFor = (item: CatalogItem, input: BriefInput): string | null =>
+  (item.category === "bottom" ? (input.sizes?.bottom ?? input.sizes?.top) : input.sizes?.top) ?? null;
+const fits = (item: CatalogItem, input: BriefInput) => {
+  const size = sizeFor(item, input);
+  return item.sizesInStock.length === 0 || !size || item.sizesInStock.includes(size);
+};
 
 /** An outfit has one upper piece (top or jacket), optional bottoms and an optional bag. */
 const slot = (item: CatalogItem) => (item.category === "top" ? "outer" : item.category);
@@ -87,8 +90,8 @@ export function mockBriefResponse(input: BriefInput): BriefResponse {
     proposals: plansFor(key).map((plan) => {
       const p = buildProposal(plan, input);
       const noMatch = (rationale: string): Proposal => ({ ...p, items: [], kept: [], subtotal: 0, rationale });
-      if (!p.items.some((i) => i.category !== "bag")) return noMatch(`Nothing in size ${input.sizes.top} for this look.`);
-      if (p.subtotal > input.budget) return noMatch(`Nothing in your size came in under $${input.budget}.`);
+      if (!p.items.some((i) => i.category !== "bag")) return noMatch(`Nothing in size ${input.sizes?.top} for this look.`);
+      if (input.budget && p.subtotal > input.budget) return noMatch(`Nothing${input.sizes ? " in your size" : ""} came in under $${input.budget}.`);
       return { ...p, kept: input.keep };
     }),
   };

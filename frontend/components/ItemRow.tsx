@@ -47,8 +47,13 @@ export function ItemRow({ item, viewing, busy, onView, onSize, onToggleLock, onR
                 value={item.size ?? ""}
                 onChange={(e) => onSize(e.target.value)}
                 disabled={busy}
-                className="min-h-11 rounded-full border border-line bg-surface px-3 text-small text-ink"
+                className={`min-h-11 rounded-full border bg-surface px-3 text-small ${item.size ? "border-line text-ink" : "border-terracotta text-terracotta-text"}`}
               >
+                {!item.size && (
+                  <option value="" disabled>
+                    Choose size
+                  </option>
+                )}
                 {item.sizesInStock.map((s) => (
                   <option key={s} value={s}>
                     Size {s}

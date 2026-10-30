@@ -7,7 +7,9 @@ import { NoMatchCard, ProposalCard } from "@/components/ProposalCard";
 import { ApiError, createBrief, selectProposal } from "@/lib/api";
 import { loadBrief, saveBrief, saveProposal, type StoredBrief } from "@/lib/briefStore";
 import { stores } from "@/lib/catalog";
-import { formatPrice, raisedBudget } from "@/lib/format";
+import { raisedBudget } from "@/lib/format";
+import { needsSize } from "@/lib/items";
+import { replaceBudget } from "@/lib/parseBrief";
 import type { Proposal } from "@/lib/types";
 
 function heading(matches: number) {
@@ -42,11 +44,14 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
   }
 
   async function raiseBudget(proposal: Proposal) {
-    if (!brief) return;
+    if (!brief?.input.budget) return;
     setError(null);
     setBusyId(proposal.id);
     try {
-      const input = { ...brief.input, budget: raisedBudget(brief.input.budget) };
+      const { budget } = brief.input;
+      const next = raisedBudget(budget);
+      // The budget was read from the sentence, so raise it there too.
+      const input = { ...brief.input, budget: next, text: replaceBudget(brief.input.text, budget, next) };
       const response = await createBrief(input);
       saveBrief(input, response);
       router.replace(`/proposals/${response.briefId}`);
@@ -83,15 +88,14 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
 
   const { input, response } = brief;
   const matches = response.proposals.filter((p) => p.items.length > 0).length;
-  const sizes = input.sizes.bottom ? `Top ${input.sizes.top}, bottoms ${input.sizes.bottom}` : `Top ${input.sizes.top}`;
 
   return (
     <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-10 md:gap-8 md:px-8 lg:px-12 md:py-14">
       <div className="flex flex-col gap-3">
         <h1 className="font-display text-h1 font-medium text-ink md:text-display">{heading(matches)}</h1>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <p className="text-small text-muted">
-            <span className="text-ink">&ldquo;{input.text}&rdquo;</span> · Budget {formatPrice(input.budget)} · {sizes}
+          <p className="text-body text-ink">
+            &ldquo;{input.text}&rdquo;
           </p>
           <Link href="/brief" className="inline-flex min-h-11 items-center text-small font-medium text-sage underline">
             Edit brief
@@ -113,14 +117,14 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
               proposal={p}
               busy={busyId !== null}
               onPreview={() => router.push(`/proposals/${briefId}/${p.id}?preview=1`)}
-              onPick={() => pick(p)}
+              onPick={() => (needsSize(p) ? router.push(`/proposals/${briefId}/${p.id}`) : pick(p))}
             />
           ) : (
             <NoMatchCard
               key={p.id}
               proposal={p}
               budget={input.budget}
-              nextBudget={raisedBudget(input.budget)}
+              nextBudget={input.budget ? raisedBudget(input.budget) : undefined}
               busy={busyId !== null}
               onRaiseBudget={() => raiseBudget(p)}
             />

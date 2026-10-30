@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { ProductImage } from "@/components/ProductImage";
+import { sizeLabel } from "@/components/ProposalCard";
 import { FrameLabel } from "@/components/TryOnViewer";
 import { getPreview, getVideo } from "@/lib/api";
 import { loadBrief, loadPreviews, loadVideo } from "@/lib/briefStore";
@@ -125,7 +126,7 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
                     <p className="min-w-0 text-small font-medium text-ink">{item.name}</p>
                     <p className="text-small font-medium tabular-nums text-ink">{formatPrice(item.price)}</p>
                   </div>
-                  <p className="text-small text-muted">{item.size ? `Size ${item.size}` : "One size"}</p>
+                  <p className="text-small text-muted">{sizeLabel(item)}</p>
                   {isShopPath(item.productUrl) ? (
                     <Link
                       href={item.productUrl}
