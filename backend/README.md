@@ -17,7 +17,7 @@ Routes follow `docs/look-exchange-prd.md` section 6. Previews and videos run in 
 
 ## Current limitations
 
-This is not production-ready. Catalog images and product links are empty, so clothing generation intentionally returns 503 before creating any paid task. Catalogs have four sample items per store and need expansion and licensed garment images before real generation can be tested. Real YouCam output parsing and generation have not been validated against a paid task.
+This is not production-ready. Catalogs contain eight original sample illustrations per store. They are not photographs of real merchandise and their suitability for YouCam is unverified. Product links point to sample catalog JSON; there is no real checkout. Set PUBLIC_BASE_URL to the public backend origin so YouCam can retrieve the reference images. Real YouCam output parsing and generation have not been validated against a paid task.
 
 Session data lives in memory, expires after one hour on API activity, and is lost on restart. Run one worker only. Attempt limits are four clothing tasks and one video per uploaded-photo session, plus 30 total tasks per UTC day. Limits reset on server restart and new photo uploads create new sessions; they do not provide durable abuse prevention. Failed attempts count toward limits to bound retries.
 

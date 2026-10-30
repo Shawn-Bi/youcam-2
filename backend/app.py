@@ -1,5 +1,7 @@
 """Look Exchange API. State is intentionally ephemeral for the demo."""
 import os
+import json
+from pathlib import Path
 import asyncio
 from contextlib import asynccontextmanager, suppress
 import io
@@ -9,6 +11,7 @@ import uuid
 from copy import deepcopy
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
@@ -50,10 +53,16 @@ async def validation_error(request: Request, exc: RequestValidationError):
 photos, briefs, proposals, previews, videos = {}, {}, {}, {}, {}
 TTL = 3600
 
-# Sample products are clearly labelled. Empty links mean imagery and product links remain to be supplied.
-CATALOGS = {
-    "northline": ("Northline", [("racer", "Racer jacket", "outer", 89, ["S", "M", "L"], ["black", "silver", "concert"]), ("vinyl", "Vinyl jacket", "outer", 72, ["S", "M"], ["black", "concert"]), ("tee", "Silver tee", "top", 35, ["XS", "S", "M", "L"], ["silver"]), ("mesh", "Mesh bag", "bag", 15, [], ["black"])]),
-    "mono-studio": ("Mono Studio", [("shine", "Shine jacket", "outer", 78, ["XS", "M", "XL"], ["black", "silver", "concert"]), ("bomber", "Satin bomber", "outer", 70, ["M", "L"], ["black"]), ("top", "Metallic top", "top", 42, ["S", "M", "L"], ["silver"]), ("disc", "Disc bag", "bag", 18, [], ["silver"])])}
+ROOT = Path(__file__).resolve().parent
+PUBLIC_BASE_URL = os.getenv('PUBLIC_BASE_URL', 'http://localhost:8000').rstrip('/')
+CATALOG_DATA = {path.stem: json.loads(path.read_text()) for path in (ROOT / 'catalogs').glob('*.json')}
+CATALOGS = {key: (value['storeName'], []) for key, value in CATALOG_DATA.items()}
+app.mount('/assets', StaticFiles(directory=ROOT / 'static'), name='assets')
+
+@app.get('/api/catalogs/{store_id}')
+async def get_catalog(store_id: str):
+    if store_id not in CATALOG_DATA: return err(404, 'Catalog not found.')
+    return {'storeId':store_id, 'sampleStore':True, 'items':catalog(store_id)}
 
 def ident(): return uuid.uuid4().hex
 
@@ -66,7 +75,7 @@ def clean():
 def err(status, message): return JSONResponse(status_code=status, content={"error": message})
 
 def catalog(store):
-    return [dict(itemId=f"{store}_{key}", name=name, category=category, price=price, sizesInStock=sizes, tags=tags, imageUrl="", productUrl="") for key, name, category, price, sizes, tags in CATALOGS[store][1]]
+    return [dict(itemId=i['itemId'], name=i['name'], category=i['category'], price=i['price'], sizesInStock=i['sizesInStock'], tags=i['styleTags'], imageUrl=PUBLIC_BASE_URL+i['imagePath'], productUrl=PUBLIC_BASE_URL+i['productPath']) for i in CATALOG_DATA[store]['items']]
 
 def public_item(item, size):
     return {k: v for k, v in item.items() if k != "tags"} | {"size": size if item["sizesInStock"] else None, "locked": False}

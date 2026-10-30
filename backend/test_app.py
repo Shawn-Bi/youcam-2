@@ -49,3 +49,12 @@ def test_bad_item_patch_is_rejected():
 def test_rejects_corrupt_images():
     response = client.post('/api/photos', data={'consent':'true'}, files={'photo':('fake.png', b'\x89PNG\r\n\x1a\ninvalid', 'image/png')})
     assert response.status_code == 422
+
+def test_catalog_images_are_served():
+    catalog = client.get('/api/catalogs/northline')
+    assert catalog.status_code == 200
+    assert len(catalog.json()['items']) == 8
+    path = catalog.json()['items'][0]['imageUrl'].replace('http://localhost:8000', '')
+    image = client.get(path)
+    assert image.status_code == 200
+    assert image.headers['content-type'] == 'image/png'

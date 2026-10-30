@@ -1,0 +1,169 @@
+{
+  "storeId": "mono-studio",
+  "storeName": "Mono Studio",
+  "sampleStore": true,
+  "items": [
+    {
+      "itemId": "mono-studio_racer",
+      "name": "Racer jacket (sample illustration)",
+      "category": "outer",
+      "price": 89,
+      "sizesInStock": [
+        "S",
+        "M",
+        "L"
+      ],
+      "colors": [
+        "#202126"
+      ],
+      "styleTags": [
+        "concert",
+        "black"
+      ],
+      "imagePath": "/assets/products/mono-studio_racer.png",
+      "productPath": "/api/catalogs/mono-studio",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_vinyl",
+      "name": "Vinyl jacket (sample illustration)",
+      "category": "outer",
+      "price": 72,
+      "sizesInStock": [
+        "S",
+        "M"
+      ],
+      "colors": [
+        "#393c43"
+      ],
+      "styleTags": [
+        "concert",
+        "black"
+      ],
+      "imagePath": "/assets/products/mono-studio_vinyl.png",
+      "productPath": "/api/catalogs/mono-studio",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_tee",
+      "name": "Silver tee (sample illustration)",
+      "category": "top",
+      "price": 35,
+      "sizesInStock": [
+        "XS",
+        "S",
+        "M",
+        "L"
+      ],
+      "colors": [
+        "#bfc3ca"
+      ],
+      "styleTags": [
+        "concert",
+        "silver"
+      ],
+      "imagePath": "/assets/products/mono-studio_tee.png",
+      "productPath": "/api/catalogs/mono-studio",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_mesh",
+      "name": "Mesh bag (sample illustration)",
+      "category": "bag",
+      "price": 15,
+      "sizesInStock": [],
+      "colors": [
+        "#24262b"
+      ],
+      "styleTags": [
+        "concert",
+        "black"
+      ],
+      "imagePath": "/assets/products/mono-studio_mesh.png",
+      "productPath": "/api/catalogs/mono-studio",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_bomber",
+      "name": "Satin bomber (sample illustration)",
+      "category": "outer",
+      "price": 70,
+      "sizesInStock": [
+        "M",
+        "L"
+      ],
+      "colors": [
+        "#48505c"
+      ],
+      "styleTags": [
+        "concert",
+        "black"
+      ],
+      "imagePath": "/assets/products/mono-studio_bomber.png",
+      "productPath": "/api/catalogs/mono-studio",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_tank",
+      "name": "Concert tank (sample illustration)",
+      "category": "top",
+      "price": 28,
+      "sizesInStock": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "colors": [
+        "#19191c"
+      ],
+      "styleTags": [
+        "concert",
+        "black"
+      ],
+      "imagePath": "/assets/products/mono-studio_tank.png",
+      "productPath": "/api/catalogs/mono-studio",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_disc",
+      "name": "Disc bag (sample illustration)",
+      "category": "bag",
+      "price": 18,
+      "sizesInStock": [],
+      "colors": [
+        "#bec2ca"
+      ],
+      "styleTags": [
+        "concert",
+        "silver"
+      ],
+      "imagePath": "/assets/products/mono-studio_disc.png",
+      "productPath": "/api/catalogs/mono-studio",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    },
+    {
+      "itemId": "mono-studio_cream",
+      "name": "Cream tee (sample illustration)",
+      "category": "top",
+      "price": 32,
+      "sizesInStock": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "colors": [
+        "#e8dfce"
+      ],
+      "styleTags": [
+        "concert",
+        "black"
+      ],
+      "imagePath": "/assets/products/mono-studio_cream.png",
+      "productPath": "/api/catalogs/mono-studio",
+      "imageLicense": "Original project illustration; not a photograph of a real product."
+    }
+  ]
+}
