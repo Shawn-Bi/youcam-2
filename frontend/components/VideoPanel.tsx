@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ApiError, getVideo, startVideo } from "@/lib/api";
+import { ApiError, getPreview, getVideo, startVideo } from "@/lib/api";
 import { loadVideo, saveVideo } from "@/lib/briefStore";
 import type { Proposal } from "@/lib/types";
 import { usePollStatus } from "@/lib/usePollStatus";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 import { FrameLabel } from "./TryOnViewer";
 
+const PREVIEW_TIMEOUT_MS = 90_000;
 const VIDEO_TIMEOUT_MS = 4 * 60_000;
 
 type Props = {
@@ -16,22 +18,28 @@ type Props = {
   itemName: string;
 };
 
-/** On the picked store: turn the try-on preview into a 5-second AI video. */
+/** On the picked store: turn the finished try-on preview into a 5-second AI video. */
 export function VideoPanel({ proposal, previewId, itemName }: Props) {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const state = usePollStatus(videoId, getVideo, { timeoutMs: VIDEO_TIMEOUT_MS });
+  const [checkAgain, setCheckAgain] = useState(0);
+  const reducedMotion = useReducedMotion();
+  // Each video costs YouCam units, so only a finished preview can be turned into one.
+  const preview = usePollStatus(previewId, getPreview, { timeoutMs: PREVIEW_TIMEOUT_MS });
+  const previewReady = preview?.status === "success" && Boolean(preview.imageUrl);
+  const video = usePollStatus(videoId, getVideo, { timeoutMs: VIDEO_TIMEOUT_MS, restartKey: checkAgain });
 
-  useEffect(() => setVideoId(loadVideo(proposal.id)), [proposal.id]);
+  // A video belongs to the preview it was made from; a replaced item starts over.
+  useEffect(() => setVideoId(loadVideo(proposal.id, previewId)), [proposal.id, previewId]);
 
   async function generate() {
-    if (!previewId || starting) return;
+    if (!previewId || !previewReady || starting) return;
     setError(null);
     setStarting(true);
     try {
       const { videoId: id } = await startVideo(proposal, previewId);
-      saveVideo(proposal.id, id);
+      saveVideo(proposal.id, previewId, id);
       setVideoId(id);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "We couldn't start the video. Try again.");
@@ -42,10 +50,13 @@ export function VideoPanel({ proposal, previewId, itemName }: Props) {
 
   const primary =
     "min-h-12 rounded-full bg-sage px-6 text-body font-medium text-on-sage hover:bg-sage-hover disabled:cursor-wait";
+  const item = itemName.toLowerCase();
 
   let body: React.ReactNode;
-  if (!previewId) {
-    body = <p className="text-body text-muted">Preview the {itemName.toLowerCase()} on your photo first, then make a video from it.</p>;
+  if (!previewId || preview?.status === "failed" || preview?.status === "timeout" || (preview?.status === "success" && !previewReady)) {
+    body = <p className="text-body text-muted">Preview the {item} on your photo first, then make a video from it.</p>;
+  } else if (!previewReady) {
+    body = <p className="text-body text-muted">Your try-on preview is still being made. The video can start once it&apos;s ready.</p>;
   } else if (!videoId) {
     body = (
       <div className="flex flex-col items-start gap-3">
@@ -55,12 +66,12 @@ export function VideoPanel({ proposal, previewId, itemName }: Props) {
         </button>
       </div>
     );
-  } else if (state?.status === "success" && state.videoUrl) {
+  } else if (video?.status === "success" && video.videoUrl) {
     body = (
       <div className="relative w-full max-w-sm overflow-hidden rounded-card border border-line bg-surface">
         <video
-          src={state.videoUrl}
-          autoPlay
+          src={video.videoUrl}
+          autoPlay={!reducedMotion}
           muted
           loop
           playsInline
@@ -71,16 +82,21 @@ export function VideoPanel({ proposal, previewId, itemName }: Props) {
         <FrameLabel ai>AI-generated video</FrameLabel>
       </div>
     );
-  } else if (state?.status === "failed" || state?.status === "timeout" || state?.status === "success") {
-    const message =
-      state.status === "timeout"
-        ? "The video is taking longer than usual."
-        : state.status === "failed"
-          ? (state.error ?? "The video didn't work this time.")
-          : "The video finished but came back empty.";
+  } else if (video?.status === "timeout") {
+    // The video may still be rendering: check the same task again instead of paying for a new one.
     body = (
       <div role="alert" className="flex flex-col items-start gap-3">
-        <p className="text-body text-ink">{message} Your proposal is still saved without it.</p>
+        <p className="text-body text-ink">The video is taking longer than usual. Your proposal works without it.</p>
+        <button type="button" onClick={() => setCheckAgain((n) => n + 1)} className={primary}>
+          Check again
+        </button>
+      </div>
+    );
+  } else if (video?.status === "failed" || video?.status === "success") {
+    const message = video.status === "failed" ? (video.error ?? "The video didn't work this time.") : "The video finished but came back empty.";
+    body = (
+      <div role="alert" className="flex flex-col items-start gap-3">
+        <p className="text-body text-ink">{message} Your proposal works without it.</p>
         <button type="button" onClick={generate} disabled={starting} className={primary}>
           Try again
         </button>

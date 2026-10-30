@@ -3,6 +3,9 @@ import type { BriefInput, BriefResponse, Item, Proposal, TaskResult } from "@/li
 
 // Mock proposals for the demo brief "Silver-and-black concert look, under $120. Keep my boots."
 // Product images stay empty until the sample catalogs exist; the UI shows a placeholder.
+// Sample stores have no real shop, so product links go to a reserved example domain.
+const PRODUCT_URL = "https://example.com/";
+
 const proposals: Proposal[] = [
   {
     id: "prop_northline",
@@ -17,7 +20,7 @@ const proposals: Proposal[] = [
         size: "M",
         sizesInStock: ["S", "M", "L"],
         imageUrl: "",
-        productUrl: "#",
+        productUrl: PRODUCT_URL,
         locked: false,
       },
       {
@@ -28,7 +31,7 @@ const proposals: Proposal[] = [
         size: null,
         sizesInStock: [],
         imageUrl: "",
-        productUrl: "#",
+        productUrl: PRODUCT_URL,
         locked: false,
       },
     ],
@@ -51,7 +54,7 @@ const proposals: Proposal[] = [
         size: "M",
         sizesInStock: ["XS", "M", "XL"],
         imageUrl: "",
-        productUrl: "#",
+        productUrl: PRODUCT_URL,
         locked: false,
       },
       {
@@ -62,7 +65,7 @@ const proposals: Proposal[] = [
         size: null,
         sizesInStock: [],
         imageUrl: "",
-        productUrl: "#",
+        productUrl: PRODUCT_URL,
         locked: false,
       },
     ],
@@ -196,12 +199,12 @@ export function mockGetVideo(videoId: string): TaskResult {
 // --- Revising a proposal ---------------------------------------------------------
 const alternatives: Record<string, Item[]> = {
   northline: [
-    { itemId: "nl_vinyl_jacket", name: "Cropped vinyl jacket", category: "outer", price: 72, size: null, sizesInStock: ["S", "M"], imageUrl: "", productUrl: "#", locked: false },
-    { itemId: "nl_mesh_bag", name: "Mesh mini bag", category: "bag", price: 15, size: null, sizesInStock: [], imageUrl: "", productUrl: "#", locked: false },
+    { itemId: "nl_vinyl_jacket", name: "Cropped vinyl jacket", category: "outer", price: 72, size: null, sizesInStock: ["S", "M"], imageUrl: "", productUrl: PRODUCT_URL, locked: false },
+    { itemId: "nl_mesh_bag", name: "Mesh mini bag", category: "bag", price: 15, size: null, sizesInStock: [], imageUrl: "", productUrl: PRODUCT_URL, locked: false },
   ],
   "mono-studio": [
-    { itemId: "ms_satin_bomber", name: "Satin bomber", category: "outer", price: 70, size: null, sizesInStock: ["M", "L"], imageUrl: "", productUrl: "#", locked: false },
-    { itemId: "ms_disc_bag", name: "Disc bag", category: "bag", price: 18, size: null, sizesInStock: [], imageUrl: "", productUrl: "#", locked: false },
+    { itemId: "ms_satin_bomber", name: "Satin bomber", category: "outer", price: 70, size: null, sizesInStock: ["M", "L"], imageUrl: "", productUrl: PRODUCT_URL, locked: false },
+    { itemId: "ms_disc_bag", name: "Disc bag", category: "bag", price: 18, size: null, sizesInStock: [], imageUrl: "", productUrl: PRODUCT_URL, locked: false },
   ],
 };
 

@@ -7,8 +7,10 @@ import { FrameLabel } from "@/components/TryOnViewer";
 import { getPreview, getVideo } from "@/lib/api";
 import { loadBrief, loadPreviews, loadVideo } from "@/lib/briefStore";
 import { formatPrice } from "@/lib/format";
+import { isWebUrl, mainItem } from "@/lib/items";
 import type { Proposal } from "@/lib/types";
 import { usePollStatus } from "@/lib/usePollStatus";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 
 type Saved = { proposal: Proposal; previewId: string | null; videoId: string | null };
 
@@ -23,16 +25,14 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
       return;
     }
     document.title = `Your ${proposal.storeName} look · Look Exchange`;
-    const main = proposal.items.find((i) => i.category !== "bag") ?? proposal.items[0];
-    setSaved({
-      proposal,
-      previewId: main ? (loadPreviews(proposal.id)[main.itemId] ?? null) : null,
-      videoId: loadVideo(proposal.id),
-    });
+    const main = mainItem(proposal);
+    const previewId = main ? (loadPreviews(proposal.id)[main.itemId] ?? null) : null;
+    setSaved({ proposal, previewId, videoId: loadVideo(proposal.id, previewId) });
   }, [briefId, proposalId]);
 
   const preview = usePollStatus(saved?.previewId ?? null, getPreview, { timeoutMs: 90_000 });
   const video = usePollStatus(saved?.videoId ?? null, getVideo, { timeoutMs: 4 * 60_000 });
+  const reducedMotion = useReducedMotion();
 
   if (saved === undefined) return <main className="mx-auto max-w-6xl px-4 py-10 md:px-6" aria-busy="true" />;
 
@@ -67,26 +67,20 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="relative aspect-[3/4] overflow-hidden rounded-card border border-line bg-surface">
-            {previewUrl ? (
-              <>
+        {previewUrl || videoUrl || videoPending ? (
+          <div className="grid grid-cols-1 gap-3 self-start sm:grid-cols-2">
+            {previewUrl && (
+              <div className="relative aspect-[3/4] overflow-hidden rounded-card border border-line bg-surface">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={previewUrl} alt={`You wearing the ${proposal.storeName} look`} className="size-full object-cover" />
                 <FrameLabel ai>AI-generated preview</FrameLabel>
-              </>
-            ) : (
-              <p className="flex size-full items-center justify-center px-6 text-center text-small text-muted">
-                No try-on preview for this look.
-              </p>
+              </div>
             )}
-          </div>
-          <div className="relative aspect-[3/4] overflow-hidden rounded-card border border-line bg-surface">
             {videoUrl ? (
-              <>
+              <div className="relative aspect-[3/4] overflow-hidden rounded-card border border-line bg-surface">
                 <video
                   src={videoUrl}
-                  autoPlay
+                  autoPlay={!reducedMotion}
                   muted
                   loop
                   playsInline
@@ -95,14 +89,26 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
                   className="size-full object-cover"
                 />
                 <FrameLabel ai>AI-generated video</FrameLabel>
-              </>
+              </div>
             ) : (
-              <p className="flex size-full items-center justify-center px-6 text-center text-small text-muted" aria-live="polite">
-                {videoPending ? "Your video is still being made…" : "No video for this look."}
-              </p>
+              videoPending && (
+                <p className="rounded-card border border-line bg-surface px-4 py-6 text-center text-small text-muted" aria-live="polite">
+                  Your video is still being made…
+                </p>
+              )
             )}
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col items-start gap-1 self-start rounded-card border border-line bg-surface px-4 py-4">
+            <p className="text-small text-muted">No try-on preview or video for this look.</p>
+            <Link
+              href={`/proposals/${briefId}/${proposal.id}`}
+              className="inline-flex min-h-11 items-center text-small font-medium text-sage underline"
+            >
+              Make one
+            </Link>
+          </div>
+        )}
 
         <section aria-labelledby="items-heading" className="flex flex-col gap-4 self-start rounded-card border border-line bg-surface p-4 md:p-6">
           <h2 id="items-heading" className="font-display text-h2 font-medium text-ink">
@@ -120,15 +126,19 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
                     <p className="text-small font-medium tabular-nums text-ink">{formatPrice(item.price)}</p>
                   </div>
                   <p className="text-small text-muted">{item.size ? `Size ${item.size}` : "One size"}</p>
-                  <a
-                    href={item.productUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center self-start text-small font-medium text-sage underline"
-                  >
-                    View at {proposal.storeName}
-                    <span className="sr-only"> (opens in a new tab)</span>
-                  </a>
+                  {isWebUrl(item.productUrl) ? (
+                    <a
+                      href={item.productUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center self-start text-small font-medium text-sage underline"
+                    >
+                      View at {proposal.storeName}
+                      <span className="sr-only"> (opens in a new tab)</span>
+                    </a>
+                  ) : (
+                    <p className="text-small text-muted">Store link not available</p>
+                  )}
                 </div>
               </li>
             ))}

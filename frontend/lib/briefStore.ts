@@ -47,21 +47,24 @@ export function savePreviews(proposalId: string, previews: Record<string, string
   }
 }
 
-// The video task id per proposal, for the same reason as previews.
+// The video task per proposal, with the preview it was made from: a video only belongs
+// to the look while that preview is still the current one (replacing the item makes it stale).
 const VIDEOS_KEY = "look-exchange:videos";
 
-export function loadVideo(proposalId: string): string | null {
+export function loadVideo(proposalId: string, previewId: string | null): string | null {
+  if (!previewId) return null;
   try {
-    return JSON.parse(sessionStorage.getItem(VIDEOS_KEY) ?? "{}")[proposalId] ?? null;
+    const stored = JSON.parse(sessionStorage.getItem(VIDEOS_KEY) ?? "{}")[proposalId];
+    return stored?.previewId === previewId ? stored.videoId : null;
   } catch {
     return null;
   }
 }
 
-export function saveVideo(proposalId: string, videoId: string) {
+export function saveVideo(proposalId: string, previewId: string, videoId: string) {
   try {
     const all = JSON.parse(sessionStorage.getItem(VIDEOS_KEY) ?? "{}");
-    sessionStorage.setItem(VIDEOS_KEY, JSON.stringify({ ...all, [proposalId]: videoId }));
+    sessionStorage.setItem(VIDEOS_KEY, JSON.stringify({ ...all, [proposalId]: { previewId, videoId } }));
   } catch {
     // The video still plays for this visit.
   }
