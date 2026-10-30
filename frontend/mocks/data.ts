@@ -145,10 +145,16 @@ function recordZoomClip(imageUrl: string): Promise<string> {
       canvas.height = 640;
       const ctx = canvas.getContext("2d");
       if (!ctx || typeof MediaRecorder === "undefined") return reject(new Error("unsupported"));
-      const recorder = new MediaRecorder(canvas.captureStream(30), { mimeType: "video/webm" });
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(canvas.captureStream(30), { mimeType: "video/webm" });
+      } catch (err) {
+        return reject(err);
+      }
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = () => resolve(URL.createObjectURL(new Blob(chunks, { type: "video/webm" })));
+      // A timer, not requestAnimationFrame: animation frames pause in background tabs and the clip would never finish.
       const start = performance.now();
       const draw = () => {
         const t = Math.min((performance.now() - start) / 5000, 1);
@@ -157,7 +163,7 @@ function recordZoomClip(imageUrl: string): Promise<string> {
         const w = img.width * cover;
         const h = img.height * cover;
         ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2 - 20 * t, w, h);
-        if (t < 1) requestAnimationFrame(draw);
+        if (t < 1) setTimeout(draw, 33);
         else recorder.stop();
       };
       recorder.start();
