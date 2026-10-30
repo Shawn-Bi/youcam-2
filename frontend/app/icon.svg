@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Look Exchange</title>
+  <rect width="64" height="64" rx="14" fill="#F3F1EA"/>
+  <path d="M12 32 L28 14 H50 V50 H28 Z" fill="#4A5D4E" stroke="#4A5D4E" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="26" cy="32" r="4.5" fill="#F3F1EA"/>
+  <circle cx="42" cy="42" r="4" fill="#D2693F"/>
+</svg>
