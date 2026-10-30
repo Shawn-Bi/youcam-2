@@ -72,7 +72,7 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
             type="button"
             onClick={onPreview}
             disabled={busy}
-            className={`${button} border border-sage text-sage hover:bg-sage-tint`}
+            className={`${button} border border-sage text-sage hover:bg-sage-tint hover:text-sage-hover`}
           >
             Preview on me
           </button>

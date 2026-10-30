@@ -57,7 +57,7 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
 
   if (brief === undefined) {
     return (
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 md:px-6" aria-busy="true">
+      <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-10 md:px-8 lg:px-12" aria-busy="true">
         <div className="h-10 w-2/3 rounded-field bg-sage-tint" />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="h-96 rounded-card border border-line bg-surface" />
@@ -84,7 +84,7 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
   const sizes = input.sizes.bottom ? `Top ${input.sizes.top}, bottoms ${input.sizes.bottom}` : `Top ${input.sizes.top}`;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 md:gap-8 md:px-6 md:py-14">
+    <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-10 md:gap-8 md:px-8 lg:px-12 md:py-14">
       <div className="flex flex-col gap-3">
         <h1 className="font-display text-h1 font-medium text-ink md:text-display">{heading(matches)}</h1>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

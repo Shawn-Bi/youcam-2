@@ -116,7 +116,7 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
   }
 
   if (proposal === undefined) {
-    return <main className="mx-auto max-w-6xl px-4 py-10 md:px-6" aria-busy="true" />;
+    return <main className="mx-auto max-w-page px-4 py-10 md:px-8 lg:px-12" aria-busy="true" />;
   }
 
   if (proposal === null) {
@@ -137,7 +137,7 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
   const videoItem = mainItem(proposal);
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 md:px-6 md:py-12">
+    <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-8 md:px-8 lg:px-12 md:py-12">
       <div className="flex flex-col gap-1">
         <Link href={`/proposals/${briefId}`} className="inline-flex min-h-11 items-center self-start text-small font-medium text-sage underline">
           Back to proposals

@@ -27,7 +27,7 @@ export default async function ProductPage({ params }: Params) {
     .slice(0, 4);
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-12 px-4 py-8 md:px-6 md:py-12">
+    <main className="mx-auto flex max-w-page flex-col gap-12 px-4 py-8 md:px-8 lg:px-12 md:py-12">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1fr_1fr] md:gap-12">
         <div className="rounded-card bg-surface p-3">
           <ProductImage src={item.imageUrl} alt={item.name} category={item.category} />
