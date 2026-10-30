@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { ItemRow } from "@/components/ItemRow";
 import { TryOnViewer } from "@/components/TryOnViewer";
 import { ApiError, OutOfStockError, replaceItem, selectProposal, startPreview, updateItem } from "@/lib/api";
 import { loadBrief, loadPreviews, savePreviews, saveProposal } from "@/lib/briefStore";
 import { formatPrice } from "@/lib/format";
-import type { Proposal } from "@/lib/types";
+import type { Item, Proposal } from "@/lib/types";
 
 const isApparel = (category: string) => category !== "bag";
 
@@ -21,6 +21,9 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
   const [busy, setBusy] = useState(false);
   const [instruction, setInstruction] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [alternatives, setAlternatives] = useState<Item[]>([]);
+  // Each try-on costs YouCam units, so the automatic first preview must start at most once.
+  const autoStarted = useRef(false);
 
   // Load the proposal; start the first apparel preview when the shopper came from "Preview on me".
   useEffect(() => {
@@ -35,8 +38,10 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
     const saved = loadPreviews(found.id);
     setPreviews(saved);
     const wantsPreview = new URLSearchParams(window.location.search).get("preview") === "1";
-    if (wantsPreview && first && !saved[first.itemId]) void requestPreview(found, first.itemId, saved);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (wantsPreview && first && !saved[first.itemId] && !autoStarted.current) {
+      autoStarted.current = true;
+      void requestPreview(found, first.itemId);
+    }
   }, [briefId, proposalId]);
 
   function commit(next: Proposal) {
@@ -44,29 +49,35 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
     saveProposal(briefId, next);
   }
 
-  async function requestPreview(target: Proposal, itemId: string, current = previews) {
+  async function requestPreview(target: Proposal, itemId: string) {
     setError(null);
     setStartingId(itemId);
     try {
       const { previewId } = await startPreview(target, itemId);
-      const next = { ...current, [itemId]: previewId };
-      setPreviews(next);
-      savePreviews(target.id, next);
+      // Merge into the latest map: another preview may have started meanwhile.
+      setPreviews((prev) => {
+        const next = { ...prev, [itemId]: previewId };
+        savePreviews(target.id, next);
+        return next;
+      });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "We couldn't start the preview. Try again.");
     } finally {
-      setStartingId(null);
+      setStartingId((current) => (current === itemId ? null : current));
     }
   }
 
   async function run(action: () => Promise<Proposal>, fallback: string) {
     setError(null);
+    setAlternatives([]);
     setBusy(true);
     try {
       return await action();
     } catch (err) {
-      if (err instanceof OutOfStockError) setError("That size just sold out. Pick another size or replace the item.");
-      else setError(err instanceof ApiError ? err.message : fallback);
+      if (err instanceof OutOfStockError) {
+        setError("That size just sold out. Pick another size or replace the item.");
+        setAlternatives(err.alternatives);
+      } else setError(err instanceof ApiError ? err.message : fallback);
       return null;
     } finally {
       setBusy(false);
@@ -133,9 +144,22 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
       </div>
 
       {error && (
-        <p role="alert" className="rounded-field border border-danger/40 bg-surface px-4 py-3 text-small text-danger">
-          {error}
-        </p>
+        <div role="alert" className="flex flex-col gap-2 rounded-field border border-danger/40 bg-surface px-4 py-3">
+          <p className="text-small text-danger">{error}</p>
+          {alternatives.length > 0 && (
+            <>
+              <p className="text-small text-ink">{proposal.storeName} has these in your size:</p>
+              <ul className="flex flex-col gap-1">
+                {alternatives.map((alt) => (
+                  <li key={alt.itemId} className="text-small text-ink">
+                    {alt.name} · {formatPrice(alt.price)}
+                    {alt.sizesInStock.length > 0 && ` · ${alt.sizesInStock.join(", ")}`}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">

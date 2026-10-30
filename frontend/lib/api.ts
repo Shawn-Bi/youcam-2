@@ -1,25 +1,11 @@
 import * as mock from "@/mocks/data";
-import type { BriefInput, BriefResponse, FieldErrors, Item, Proposal, TaskResult } from "./types";
+import { ApiError, OutOfStockError, ValidationError } from "./errors";
+import type { BriefInput, BriefResponse, Proposal, TaskResult } from "./types";
+
+export { ApiError, OutOfStockError, ValidationError };
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
-
-/** The backend rejected some fields (HTTP 422). */
-export class ValidationError extends Error {
-  constructor(public fields: FieldErrors) {
-    super("Some fields need attention.");
-  }
-}
-
-/** The requested size is not in stock (HTTP 409); the store suggests alternatives. */
-export class OutOfStockError extends Error {
-  constructor(public alternatives: Item[]) {
-    super("That size is out of stock.");
-  }
-}
-
-/** The backend could not be reached or failed. */
-export class ApiError extends Error {}
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const proposalPath = (id: string) => `/api/proposals/${encodeURIComponent(id)}`;
@@ -33,7 +19,7 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
   try {
     res = await fetch(`${BASE_URL}${path}`, init);
   } catch {
-    throw new ApiError("We couldn't reach Look Exchange. Check your connection and try again.");
+    throw new ApiError("We couldn't reach Look Exchange. Check your connection and try again.", true);
   }
   if (res.status === 422) {
     const body = await res.json().catch(() => ({}));

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ApiError } from "./errors";
 import type { TaskResult } from "./types";
 
 export type PollState = TaskResult | { status: "timeout" };
@@ -17,7 +18,8 @@ const SLOW_AFTER_MS = 20000;
 /**
  * Polls a slow task (YouCam try-on or video) until it succeeds, fails or times out.
  * Polls every 2 s, then every 5 s after 20 s. Pass a null id to stay idle.
- * Stops when the id changes or the component unmounts.
+ * Stops when the id changes or the component unmounts. `fetchStatus` may be an
+ * inline function; only a new id restarts polling.
  */
 export function usePollStatus(
   id: string | null,
@@ -25,6 +27,8 @@ export function usePollStatus(
   { timeoutMs }: Options,
 ): PollState | null {
   const [state, setState] = useState<PollState | null>(null);
+  const fetchRef = useRef(fetchStatus);
+  fetchRef.current = fetchStatus;
 
   useEffect(() => {
     if (!id) {
@@ -44,10 +48,14 @@ export function usePollStatus(
       }
       let result: TaskResult;
       try {
-        result = await fetchStatus(id);
-      } catch {
-        // A dropped request is not a failed task; keep polling until the timeout.
-        result = { status: "running" };
+        result = await fetchRef.current(id);
+      } catch (err) {
+        // A dropped connection is not a failed task, so keep polling until the timeout.
+        // Any other backend error (unknown task, server failure) ends polling.
+        result =
+          err instanceof ApiError && !err.network
+            ? { status: "failed", error: err.message }
+            : { status: "running" };
       }
       if (cancelled) return;
       setState(result);
@@ -60,7 +68,7 @@ export function usePollStatus(
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [id, fetchStatus, timeoutMs]);
+  }, [id, timeoutMs]);
 
   return state;
 }

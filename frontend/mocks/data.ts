@@ -1,4 +1,4 @@
-import { ApiError, OutOfStockError } from "@/lib/api";
+import { ApiError, OutOfStockError } from "@/lib/errors";
 import type { BriefInput, BriefResponse, Item, Proposal, TaskResult } from "@/lib/types";
 
 // Mock proposals for the demo brief "Silver-and-black concert look, under $120. Keep my boots."
