@@ -87,10 +87,14 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 md:gap-8 md:px-6 md:py-14">
       <div className="flex flex-col gap-3">
         <h1 className="font-display text-h1 font-semibold text-ink md:text-display">{heading(matches)}</h1>
-        <p className="text-small text-muted">
-          <span className="text-ink">&ldquo;{input.text}&rdquo;</span> · Budget {formatPrice(input.budget)} · {sizes}{" "}
-          · <Link href="/" className="font-medium text-sage underline">Edit brief</Link>
-        </p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <p className="text-small text-muted">
+            <span className="text-ink">&ldquo;{input.text}&rdquo;</span> · Budget {formatPrice(input.budget)} · {sizes}
+          </p>
+          <Link href="/" className="inline-flex min-h-11 items-center text-small font-medium text-sage underline">
+            Edit brief
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -105,7 +109,7 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
             <ProposalCard
               key={p.id}
               proposal={p}
-              busy={busyId === p.id}
+              busy={busyId !== null}
               onPreview={() => router.push(`/proposals/${briefId}/${p.id}`)}
               onPick={() => pick(p)}
             />
@@ -115,7 +119,7 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
               proposal={p}
               budget={input.budget}
               nextBudget={raisedBudget(input.budget)}
-              busy={busyId === p.id}
+              busy={busyId !== null}
               onRaiseBudget={() => raiseBudget(p)}
             />
           ),

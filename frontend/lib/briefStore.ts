@@ -26,13 +26,17 @@ export function saveProposal(briefId: string, proposal: Proposal) {
   saveBrief(stored.input, { ...stored.response, proposals });
 }
 
-export function loadBrief(briefId: string): StoredBrief | null {
+/** The most recent brief in this tab, used to refill the form when the shopper edits it. */
+export function loadLatestBrief(): StoredBrief | null {
   try {
     const raw = sessionStorage.getItem(KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredBrief;
-    return parsed.response?.briefId === briefId ? parsed : null;
+    return raw ? (JSON.parse(raw) as StoredBrief) : null;
   } catch {
     return null;
   }
+}
+
+export function loadBrief(briefId: string): StoredBrief | null {
+  const latest = loadLatestBrief();
+  return latest?.response?.briefId === briefId ? latest : null;
 }

@@ -3,7 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, ValidationError, createBrief, uploadPhoto } from "@/lib/api";
-import { saveBrief } from "@/lib/briefStore";
+import { loadLatestBrief, saveBrief } from "@/lib/briefStore";
 import type { FieldErrors } from "@/lib/types";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -39,6 +39,23 @@ export function BriefForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Photo already uploaded for an earlier brief in this tab; reused unless a new one is chosen.
+  const [storedPhotoId, setStoredPhotoId] = useState<string | null>(null);
+
+  // Coming back via "Edit brief": refill the form from the last brief.
+  useEffect(() => {
+    const latest = loadLatestBrief();
+    if (!latest) return;
+    const { input } = latest;
+    setStoredPhotoId(input.photoId);
+    setConsent(true);
+    setText(input.text);
+    setBudget(String(input.budget));
+    setOccasion(input.occasion);
+    setTopSize(input.sizes.top);
+    setBottomSize(input.sizes.bottom ?? "");
+    setKeep(input.keep);
+  }, []);
 
   useEffect(() => {
     if (!photo) {
@@ -80,7 +97,7 @@ export function BriefForm() {
 
   function validate(): FieldErrors {
     const found: FieldErrors = {};
-    if (!photo) found.photo = "Add a full-body photo of yourself.";
+    if (!photo && !storedPhotoId) found.photo = "Add a full-body photo of yourself.";
     if (!consent) found.consent = "Agree to send your photo for try-on to continue.";
     if (!text.trim()) found.text = "Describe the look you want.";
     const amount = Number(budget);
@@ -94,11 +111,11 @@ export function BriefForm() {
     setFormError(null);
     const found = validate();
     setErrors(found);
-    if (Object.keys(found).length > 0 || !photo) return;
+    if (Object.keys(found).length > 0) return;
 
     setSubmitting(true);
     try {
-      const { photoId } = await uploadPhoto(photo);
+      const photoId = photo ? (await uploadPhoto(photo)).photoId : storedPhotoId!;
       const input = {
         photoId,
         text: text.trim(),
@@ -132,6 +149,11 @@ export function BriefForm() {
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="Your uploaded photo" className="max-h-96 w-full object-contain" />
+          ) : storedPhotoId ? (
+            <span className="flex flex-col gap-1 px-6 py-10">
+              <span className="text-body font-medium text-ink">Using the photo you added earlier</span>
+              <span className="text-small text-muted">Choose a new one to replace it.</span>
+            </span>
           ) : (
             <span className="flex flex-col gap-1 px-6 py-10">
               <span className="text-body font-medium text-ink">Add a full-body photo</span>
