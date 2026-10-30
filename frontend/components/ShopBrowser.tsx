@@ -119,7 +119,7 @@ export function ShopBrowser({ items, storeFilter = true }: Props) {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr] md:gap-8">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_1fr] lg:grid-cols-[260px_1fr] md:gap-8">
       <aside aria-label="Filters" className="self-start rounded-card bg-surface px-5 py-1 md:p-5">
         <details className="md:hidden">
           <summary className="flex min-h-11 cursor-pointer items-center text-small font-medium text-ink">
@@ -168,7 +168,7 @@ export function BriefBanner() {
         href="/brief"
         className="flex min-h-11 shrink-0 items-center justify-center rounded-full bg-sage px-5 text-small font-medium text-on-sage hover:bg-sage-hover"
       >
-        Style brief →
+        Style brief
       </Link>
     </div>
   );

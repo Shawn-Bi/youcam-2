@@ -23,17 +23,17 @@ export default async function StorePage({ params }: Params) {
     <main>
       <section className="relative overflow-hidden border-b border-line bg-sand">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={store.heroImage} alt="" className="absolute inset-0 size-full object-cover md:left-1/3 md:w-2/3" />
-        <div className="absolute inset-0 bg-gradient-to-r from-stone via-stone/85 to-stone/10 md:via-stone/70 md:to-transparent" />
-        <div className="relative mx-auto flex max-w-6xl flex-col gap-2 px-4 py-12 md:px-6 md:py-16">
+        <img src={store.heroImage} alt="" className="absolute inset-0 size-full object-cover object-[center_12%]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-stone via-stone/85 to-stone/60 md:from-stone/95 md:via-stone/60 md:via-50% md:to-transparent md:to-85%" />
+        <div className="relative mx-auto flex max-w-page flex-col gap-2 px-4 py-14 md:px-8 lg:px-12 md:py-24">
           <Link href="/stores" className="inline-flex min-h-11 items-center self-start text-small font-medium text-sage underline">
             All stores
           </Link>
           <h1 className="font-display text-display font-medium text-ink md:text-hero">{store.name}</h1>
-          <p className="max-w-sm text-body text-muted md:text-h2 md:font-display">{store.description}</p>
+          <p className="max-w-xs text-body text-ink md:text-h2 md:font-display lg:max-w-lg">{store.description}</p>
         </div>
       </section>
-      <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
+      <div className="mx-auto max-w-page px-4 py-8 md:px-8 lg:px-12 md:py-10">
         <ShopBrowser items={itemsInStore(store.storeId)} storeFilter={false} />
       </div>
     </main>

@@ -10,30 +10,30 @@ const NEW_IN = ["nl_racer_jacket", "ms_knit_sweater", "nl_chrome_cami", "ms_nova
 export default function Home() {
   const inset = getCatalogItem("nl_luna_bag");
   return (
-    <main className="flex flex-col gap-14 pb-16 md:gap-20">
+    <main className="flex flex-col gap-10 pb-16 md:gap-14">
       <section className="relative overflow-hidden bg-sand">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/catalog/home-hero.jpg"
           alt=""
-          className="absolute inset-0 size-full object-cover object-[70%_center] md:left-[30%] md:w-[70%]"
+          className="absolute inset-0 size-full object-cover object-[70%_center] md:object-[85%_30%] lg:object-[center_30%]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-stone via-stone/70 to-transparent md:bg-gradient-to-r md:from-stone md:via-stone/80 md:to-transparent" />
-        <div className="relative mx-auto flex min-h-[560px] max-w-6xl flex-col justify-end gap-6 px-4 pt-48 pb-10 md:min-h-[600px] md:justify-center md:px-6 md:py-20">
-          <h1 className="max-w-xl font-display text-display font-medium text-ink md:text-hero">
+        <div className="absolute inset-0 bg-gradient-to-t from-stone via-stone/70 to-transparent md:bg-gradient-to-r md:from-stone/95 md:via-stone/55 md:via-45% md:to-transparent md:to-70%" />
+        <div className="relative mx-auto flex min-h-[600px] max-w-page flex-col justify-end gap-7 px-4 pt-56 pb-10 md:min-h-[680px] md:justify-center md:px-8 lg:px-12 md:py-20">
+          <h1 className="max-w-md font-display text-display font-medium text-ink md:max-w-sm lg:max-w-3xl lg:text-hero">
             Two stores.
             <br />
             One look. Yours.
           </h1>
-          <p className="max-w-md text-body text-ink md:text-h2 md:font-display">
+          <p className="max-w-sm text-body text-ink md:text-h2 md:font-display lg:max-w-lg">
             Describe the look you want. Two stores style you, and you try it on your own photo.
           </p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link
               href="/brief"
-              className="flex min-h-12 items-center rounded-full bg-sage px-7 text-body font-medium text-on-sage hover:bg-sage-hover"
+              className="flex min-h-14 items-center rounded-full bg-sage px-8 text-body font-medium text-on-sage hover:bg-sage-hover"
             >
-              Post a style brief →
+              Post a style brief
             </Link>
             <Link
               href="/shop"
@@ -46,7 +46,7 @@ export default function Home() {
         {inset && (
           <Link
             href={inset.productUrl}
-            className="absolute right-[4%] bottom-10 hidden w-40 rotate-2 rounded-card border-4 border-surface bg-surface shadow-[0_16px_40px_-16px_rgb(0_0_0/0.35)] lg:block"
+            className="absolute right-[4%] bottom-10 hidden w-48 rotate-2 rounded-card border-4 border-surface bg-surface shadow-[0_16px_40px_-16px_rgb(0_0_0/0.35)] lg:block"
             aria-label={`${inset.name}, from Northline`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -55,7 +55,7 @@ export default function Home() {
         )}
       </section>
 
-      <section aria-labelledby="stores-heading" className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 md:px-6">
+      <section aria-labelledby="stores-heading" className="mx-auto flex w-full max-w-page flex-col gap-5 px-4 md:px-8 lg:px-12">
         <h2 id="stores-heading" className="font-display text-h1 font-medium text-ink">
           Shop the stores
         </h2>
@@ -66,15 +66,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="new-heading" className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 md:px-6">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 id="new-heading" className="font-display text-h1 font-medium text-ink">
-            New in
-          </h2>
-          <Link href="/shop" className="inline-flex min-h-11 items-center text-small font-medium text-sage underline">
-            Shop everything
-          </Link>
-        </div>
+      <section aria-labelledby="new-heading" className="mx-auto flex w-full max-w-page flex-col gap-5 px-4 md:px-8 lg:px-12">
+        <h2 id="new-heading" className="font-display text-h1 font-medium text-ink">
+          New in
+        </h2>
         <ul className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {NEW_IN.map((item) => (
             <ProductCard key={item.itemId} item={item} />
