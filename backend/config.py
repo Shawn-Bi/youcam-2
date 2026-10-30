@@ -36,3 +36,5 @@ load_env()
 PUBLIC_BASE_URL = (os.getenv('PUBLIC_BASE_URL') or os.getenv('RENDER_EXTERNAL_URL') or 'http://localhost:8000').rstrip('/')
 FRONTEND_ORIGINS = [x.strip().rstrip('/') for x in os.getenv('FRONTEND_ORIGINS', 'http://localhost:3000').split(',') if x.strip()]
 FRONTEND_ORIGIN_REGEX = os.getenv('FRONTEND_ORIGIN_REGEX') or None
+# YouCam's bag try-on requires a gender and the brief form does not ask for one.
+BAG_GENDER = os.getenv('BAG_GENDER', 'female').strip().lower()

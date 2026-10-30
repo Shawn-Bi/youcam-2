@@ -4,7 +4,7 @@ import json
 import httpx
 import pytest
 
-from youcam import CLOTH, VIDEO, YouCam, YouCamError, friendly, sniff
+from youcam import BAG, CLOTH, VIDEO, YouCam, YouCamError, friendly, sniff
 
 PNG = b'\x89PNG\r\n\x1a\n' + b'0' * 20
 JPEG = b'\xff\xd8\xff\xe0' + b'0' * 20
@@ -49,6 +49,20 @@ def test_upload_and_cloth_task_use_file_ids_and_keep_the_token_off_the_upload_ho
     assert task_request.url.path == CLOTH
     assert json.loads(task_request.content) == {'src_file_id': 'f1', 'ref_file_id': 'f3', 'garment_category': 'outer'}
     assert len(calls) == 5
+
+
+def test_bag_task_sends_the_required_gender_and_rejects_unknown_ones():
+    calls = []
+
+    async def work(api):
+        task = await api.create_bag('f1', 'f2', 'female')
+        with pytest.raises(YouCamError):
+            await api.create_bag('f1', 'f2', 'robot')
+        return task
+
+    assert run(file_handler(calls), work) == 'task-1'
+    assert len(calls) == 1 and calls[0].url.path == BAG
+    assert json.loads(calls[0].content) == {'src_file_id': 'f1', 'ref_file_id': 'f2', 'gender': 'female'}
 
 
 def test_video_uses_a_file_id_or_a_url():

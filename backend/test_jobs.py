@@ -7,7 +7,7 @@ import pytest
 
 import jobs as module
 from jobs import Jobs
-from youcam import CLOTH, VIDEO, YouCamError
+from youcam import BAG, CLOTH, VIDEO, YouCamError
 
 PNG = b'\x89PNG\r\n\x1a\n' + b'0' * 20
 JPEG = b'\xff\xd8\xff\xe0' + b'0' * 20
@@ -44,6 +44,10 @@ class FakeYouCam:
     async def create_cloth(self, source, garment, category):
         self.calls.append(('cloth', source, garment, category))
         return 'remote-1'
+
+    async def create_bag(self, source, garment, gender):
+        self.calls.append(('bag', source, garment, gender))
+        return 'remote-3'
 
     async def create_video(self, source_file_id=None, source_url=None):
         self.calls.append(('video', source_file_id, source_url))
@@ -130,6 +134,15 @@ def test_successful_preview_uploads_both_images_and_returns_the_result(fake):
     assert task == {'kind': 'preview', 'status': 'success', 'imageUrl': 'https://r.example/p.png'}
     assert fake.calls[:3] == [('upload', 'image/jpeg'), ('upload', 'image/png'), ('cloth', 'file-1', 'file-2', 'outer')]
     assert [c[:2] for c in fake.calls[3:]] == [('status', CLOTH)] * 2
+
+
+def test_bag_preview_uses_the_bag_endpoint_with_a_gender(fake):
+    fake.script = [{'task_status': 'success', 'results': {'url': 'https://r.example/bag.jpg'}}]
+    task = preview_task()
+    run(Jobs().run(task, 'key', photo=JPEG, reference=PNG, category='bag', gender='male'))
+    assert task == {'kind': 'preview', 'status': 'success', 'imageUrl': 'https://r.example/bag.jpg'}
+    assert ('bag', 'file-1', 'file-2', 'male') in fake.calls and not any(c[0] == 'cloth' for c in fake.calls)
+    assert [c[:2] for c in fake.calls if c[0] == 'status'] == [('status', BAG)]
 
 
 def test_youcam_rejection_becomes_a_friendly_message_and_frees_the_slot(fake):

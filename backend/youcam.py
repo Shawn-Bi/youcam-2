@@ -4,7 +4,9 @@ import httpx
 
 API_BASE = 'https://yce-api-01.makeupar.com'
 CLOTH = '/s2s/v2.0/task/cloth-v4'
+BAG = '/s2s/v2.0/task/bag'
 VIDEO = '/s2s/v2.0/task/image-to-video/youcam'
+GENDERS = ('female', 'male')  # bag try-on requires one; YouCam rejects anything else
 MAX_DOWNLOAD = 15_000_000
 VIDEO_PROMPT = 'The person turns slowly and smiles, showing the outfit.'
 TRANSIENT = (429, 500, 502, 503, 504)
@@ -118,6 +120,12 @@ class YouCam:
         result = await self.request('POST', CLOTH, json={'src_file_id': source_file_id, 'ref_file_id': reference_file_id, 'garment_category': category})
         return self.task_id(result)
 
+    async def create_bag(self, source_file_id, reference_file_id, gender):
+        if gender not in GENDERS:
+            raise YouCamError('Unsupported gender.', code='gender')
+        result = await self.request('POST', BAG, json={'src_file_id': source_file_id, 'ref_file_id': reference_file_id, 'gender': gender})
+        return self.task_id(result)
+
     async def create_video(self, source_file_id=None, source_url=None):
         body = {'dst_duration': 5, 'resolution': '480', 'model': 'youcam-video-v2', 'prompt': VIDEO_PROMPT}
         if source_file_id:
@@ -127,7 +135,7 @@ class YouCam:
         return self.task_id(await self.request('POST', VIDEO, json=body))
 
     async def status(self, endpoint, task_id):
-        if endpoint not in (CLOTH, VIDEO) or not task_id or '/' in task_id:
+        if endpoint not in (CLOTH, BAG, VIDEO) or not task_id or '/' in task_id:
             raise YouCamError('Invalid task.', code='task')
         result = await self.request('GET', endpoint + '/' + task_id)
         data = result.get('data')

@@ -60,6 +60,7 @@
 - 文件上传：`POST /s2s/v2.0/file` 是唯一的 File API；返回 `data.files[].file_id` 和 `requests[]`（预签名 `PUT` 地址），上传时不要带 `Authorization`。
 - 服装试穿 V4：`src_file_id` + `ref_file_id` + `garment_category: "outer"` 可用，全身照被接受，耗时约 13 秒，**2 单位**。结果在 `data.results.url`（JPEG，约 150 KB，2 小时有效）。
 - 图片生成视频：以试穿结果图重新上传得到的 `src_file_id` 可用，5 秒、480p，耗时约 59 秒，**5 单位**。结果是 MP4（约 1 MB）。后端是下载结果图再上传，没有测试把结果 URL 直接当 `src_file_url`。
+- 包袋试穿：`src_file_id` + `ref_file_id` + `gender`（必填，`female` 和 `male` 均可用；`style` 可省略）。耗时约 19–40 秒，**2 单位**。这是生成式接口，会把人物重新放进一个场景并换一套搭配，所以包袋预览不能用来生成视频，后端已限制。前端没有收集性别，后端默认 `female`，可用环境变量 `BAG_GENDER` 改，或在预览请求里可选地传 `gender`。
 - 免费的只读接口：`GET /s2s/v1.0/client/credit` 查余额；`GET /s2s/v2.0/credit/feature-cost` 只列了 20 项，不含服装、包袋和视频。
 - 日志注意：`httpx` 默认会在 INFO 级别记录完整请求地址，包括签名 URL 和任务 ID，后端已将其降为 WARNING。
 

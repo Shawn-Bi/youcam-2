@@ -21,6 +21,7 @@ Copy `.env.example` to `.env` (git-ignored) or set the variables on the hosting 
 | `FRONTEND_ORIGINS` | Comma-separated exact frontend origins, no trailing slash. Default `http://localhost:3000`. |
 | `FRONTEND_ORIGIN_REGEX` | Optional pattern for preview deployments, for example `https://youcam-.*\.vercel\.app`. |
 | `PUBLIC_BASE_URL` | Public backend origin used in item image and product links. Falls back to Render's `RENDER_EXTERNAL_URL`, then `http://localhost:8000`. |
+| `BAG_GENDER` | `female` or `male`, used for bag try-on when the request does not say. Default `female`. |
 | `SESSION_PREVIEW_LIMIT`, `SESSION_VIDEO_LIMIT`, `DAILY_TASK_LIMIT`, `DAILY_VIDEO_LIMIT` | Unit guards, see below. Defaults 6, 2, 40, 10. |
 | `SESSION_PREVIEW_ATTEMPTS`, `SESSION_VIDEO_ATTEMPTS`, `DAILY_ATTEMPT_LIMIT` | Hard caps on tries including failed ones. Defaults 12, 4, 150. |
 
@@ -32,7 +33,7 @@ Routes follow the shared contract in `docs/look-exchange-prd.md` section 6 and t
 
 - Uploaded photos are decoded, rotated upright, stripped of metadata (including location), flattened to RGB and capped at 2048 px, then kept as JPEG for one hour. Photos under 512 px, wider than 2.5:1, or over 10 MB are refused with `422 {"errors":{"photo":…}}`.
 - Proposals are built by rules in `catalog.py`, never by a model: items in the shopper's size, within budget, scored by style tags in the brief. Each store has its own catalog, so the two proposals differ.
-- Previews upload the shopper's photo and the product illustration to YouCam and run clothes try-on V4 (`upper_body` for tops, `outer` for jackets). Bag try-on is not implemented.
+- Previews upload the shopper's photo and the product illustration to YouCam and run clothes try-on V4 (`upper_body` for tops, `outer` for jackets), or bag try-on for bags. Bag try-on needs a gender: `BAG_GENDER` (default `female`) applies unless the request adds an optional `"gender": "female" | "male"`. YouCam restages the shopper in a new scene for bags, so a bag preview cannot be used to make a video.
 - Videos are 5 seconds at 480p. They require a selected proposal and a successful preview of an item that is still in it. The try-on result is downloaded and re-uploaded to YouCam, with the result URL as a fallback.
 - A size change does not invalidate a preview: try-on shows appearance only. Replacing an item gives it a new `itemId`, which needs its own preview.
 - Task records live for an hour after last use, so a client can poll the same `previewId` or `videoId` again without paying for a new task.
@@ -40,7 +41,7 @@ Routes follow the shared contract in `docs/look-exchange-prd.md` section 6 and t
 
 ## Measured with the real API (2026-10-30)
 
-One clothes try-on (`outer`, full-body photo) took about 13 seconds and cost 2 units. One 5-second 480p video made from that result took about 59 seconds and cost 5 units. The preview deadline is 120 seconds and the video deadline 300 seconds. Request URLs are never logged, because YouCam's are signed.
+One clothes try-on (`outer`, full-body photo) took about 13 seconds and cost 2 units. One 5-second 480p video made from that result took 47 to 59 seconds and cost 5 units. One bag try-on took 19 to 40 seconds and cost 2 units; both `female` and `male` are accepted. The preview deadline is 120 seconds and the video deadline 300 seconds. Request URLs are never logged, because YouCam's are signed.
 
 ## Unit guards
 

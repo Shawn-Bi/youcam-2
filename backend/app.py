@@ -22,6 +22,7 @@ from starlette.requests import Request
 import catalog
 import config
 from jobs import Jobs
+from youcam import GENDERS
 
 logging.basicConfig(level=logging.INFO)
 jobs = Jobs()
@@ -342,6 +343,7 @@ async def select(pid: str):
 
 class PreviewBody(BaseModel):
     itemId: str = ''
+    gender: str | None = None  # optional; only bag try-on uses it, and the server default applies when omitted
 
 
 @app.post('/api/proposals/{pid}/previews')
@@ -353,8 +355,11 @@ async def start_preview(pid: str, body: PreviewBody):
     item = item_of(p, body.itemId)
     if item is None:
         return error(404, 'Item not found.')
-    if item['category'] not in catalog.CLOTHING:
-        return error(422, 'Only clothing previews are currently supported.')
+    if item['category'] not in catalog.CLOTHING + ('bag',):
+        return error(422, 'This kind of item cannot be previewed.')
+    gender = (body.gender or config.BAG_GENDER).strip().lower()
+    if item['category'] == 'bag' and gender not in GENDERS:
+        return field_error('gender', 'Use female or male.')
     key = os.getenv('YOUCAM_API_KEY')
     if not key:
         return error(503, 'YouCam is not configured.')
@@ -367,9 +372,10 @@ async def start_preview(pid: str, body: PreviewBody):
     if not await jobs.reserve(brief['photoId'], 'preview'):
         return error(429, 'Generation limit reached for this session or day.')
     tid = ident()
-    previews[tid] = task = record(status='queued', kind='preview', proposal=pid, item=item['itemId'])
+    previews[tid] = task = record(status='queued', kind='preview', proposal=pid, item=item['itemId'], category=item['category'])
     garment = catalog.image_file(catalog.find(p['storeId'], item['itemId'])).read_bytes()
-    jobs.start(task, key, session=brief['photoId'], photo=photo['data'], reference=garment, category='outer' if item['category'] == 'outer' else 'upper_body')
+    category = {'outer': 'outer', 'bag': 'bag'}.get(item['category'], 'upper_body')
+    jobs.start(task, key, session=brief['photoId'], photo=photo['data'], reference=garment, category=category, gender=gender)
     return {'previewId': tid}
 
 
@@ -397,7 +403,8 @@ async def start_video(pid: str, body: VideoBody):
     if body.duration != 5 or body.resolution != '480':
         return error(422, 'Use a 5-second video at 480p.')
     preview = get(previews, body.previewId)
-    if preview is None or preview['proposal'] != pid or preview['status'] != 'success' or item_of(p, preview['item']) is None:
+    # The video is made from the outfit's main piece; a bag preview restages the shopper in a new scene.
+    if preview is None or preview['proposal'] != pid or preview['status'] != 'success' or item_of(p, preview['item']) is None or preview['category'] not in catalog.CLOTHING:
         return error(409, 'Generate a current preview for this proposal first.')
     key = os.getenv('YOUCAM_API_KEY')
     if not key:

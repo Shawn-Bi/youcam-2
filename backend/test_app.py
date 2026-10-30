@@ -217,15 +217,45 @@ def test_select_marks_exactly_one_proposal_of_the_brief():
 
 # --- previews and videos ----------------------------------------------------------------
 
-def test_previews_need_a_key_and_only_cover_clothing(monkeypatch):
+def test_previews_need_a_key_and_a_known_item(monkeypatch):
     p = proposal()
     jacket, bag = p['items']
     base = f"/api/proposals/{p['id']}"
     assert client.post(base + '/previews', json={'itemId': jacket['itemId']}).status_code == 503
+    assert client.post(base + '/previews', json={'itemId': bag['itemId']}).status_code == 503
     monkeypatch.setenv('YOUCAM_API_KEY', 'test-key')
-    assert client.post(base + '/previews', json={'itemId': bag['itemId']}).status_code == 422
     assert client.post(base + '/previews', json={'itemId': 'missing'}).status_code == 404
     assert client.post('/api/proposals/nope/previews', json={'itemId': 'x'}).status_code == 404
+
+
+def test_bag_preview_uses_bag_try_on_and_cannot_feed_a_video(youcam):
+    p = proposal()
+    jacket, bag = p['items']
+    base = f"/api/proposals/{p['id']}"
+    bag_preview = client.post(base + '/previews', json={'itemId': bag['itemId']})
+    assert bag_preview.status_code == 200
+    job = youcam[-1]
+    assert job['category'] == 'bag' and job['gender'] == 'female' and job['reference'].startswith(b'\x89PNG')
+    assert client.get('/api/previews/' + bag_preview.json()['previewId']).json()['status'] == 'success'
+    client.post(base + '/select')
+    body = {'previewId': bag_preview.json()['previewId'], 'duration': 5, 'resolution': '480'}
+    assert client.post(base + '/videos', json=body).status_code == 409
+    jacket_preview = client.post(base + '/previews', json={'itemId': jacket['itemId']}).json()['previewId']
+    assert youcam[-1]['category'] == 'outer'
+    assert client.post(base + '/videos', json={**body, 'previewId': jacket_preview}).status_code == 200
+
+
+def test_bag_gender_can_be_chosen_per_request_and_is_validated(youcam):
+    p = proposal()
+    bag = p['items'][1]
+    base = f"/api/proposals/{p['id']}"
+    bad = client.post(base + '/previews', json={'itemId': bag['itemId'], 'gender': 'robot'})
+    assert bad.status_code == 422 and list(bad.json()['errors']) == ['gender']
+    assert not youcam
+    assert client.post(base + '/previews', json={'itemId': bag['itemId'], 'gender': ' Male '}).status_code == 200
+    assert youcam[-1]['gender'] == 'male'
+    jacket = p['items'][0]
+    assert client.post(base + '/previews', json={'itemId': jacket['itemId'], 'gender': 'robot'}).status_code == 200
 
 
 def test_preview_sends_the_stored_photo_and_the_garment_image(youcam):

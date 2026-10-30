@@ -5,7 +5,7 @@ import time
 from collections import Counter
 import httpx
 from config import int_env
-from youcam import YouCam, CLOTH, VIDEO, YouCamError, sniff, friendly
+from youcam import YouCam, BAG, CLOTH, VIDEO, YouCamError, sniff, friendly
 
 log = logging.getLogger('look-exchange')
 # httpx logs every request URL at INFO, which would put YouCam's signed URLs and task ids in the server log.
@@ -63,7 +63,8 @@ class Jobs:
         self.running.add(future)
         future.add_done_callback(self.running.discard)
 
-    async def run(self, task, key, photo=None, reference=None, category=None, source_url=None, session=None):
+    async def run(self, task, key, photo=None, reference=None, category=None, source_url=None, gender=None, session=None):
+        """`category` is upper_body or outer for clothes try-on, or bag for bag try-on (which needs `gender`)."""
         task['status'] = 'running'
         try:
             async with asyncio.timeout(DEADLINES[task['kind']]):
@@ -72,8 +73,11 @@ class Jobs:
                     if task['kind'] == 'preview':
                         source = await api.upload(photo, sniff(photo) or 'image/jpeg')
                         garment = await api.upload(reference, sniff(reference) or 'image/png')
-                        remote_id = await api.create_cloth(source, garment, category)
-                        endpoint, field = CLOTH, 'imageUrl'
+                        if category == 'bag':
+                            remote_id, endpoint = await api.create_bag(source, garment, gender), BAG
+                        else:
+                            remote_id, endpoint = await api.create_cloth(source, garment, category), CLOTH
+                        field = 'imageUrl'
                     else:
                         remote_id = await self.create_video(api, source_url)
                         endpoint, field = VIDEO, 'videoUrl'
