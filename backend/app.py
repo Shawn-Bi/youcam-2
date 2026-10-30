@@ -173,6 +173,14 @@ async def select(pid: str):
         if other['briefId'] == p['briefId']: other['selected'] = other is p
     return public(p)
 
+def item_signature(item):
+    return (item['itemId'], item['size'], item['imageUrl'])
+
+
+def preview_is_current(task, proposal):
+    return any(item_signature(item) == task.get('signature') for item in proposal['items'])
+
+
 @app.post('/api/proposals/{pid}/previews')
 async def start_preview(pid: str, body: dict):
     clean(); p = proposals.get(pid)
@@ -187,11 +195,11 @@ async def start_preview(pid: str, body: dict):
     photo = photos.get(brief['data'].photoId) if brief else None
     if not photo: return err(410, 'Photo expired. Please upload it again.')
     for tid, task in previews.items():
-        if task['proposal'] == pid and task['version'] == p['version'] and task['item'] == item['itemId'] and task['status'] in ('queued', 'running', 'success'):
+        if task['proposal'] == pid and task.get('signature') == item_signature(item) and task['item'] == item['itemId'] and task['status'] in ('queued', 'running', 'success'):
             return {'previewId':tid}
     if not await jobs.reserve(brief['data'].photoId, 'preview'): return err(429, 'Generation limit reached for this session or day.')
     tid = ident()
-    task = dict(created=time.time(), status='queued', kind='preview', proposal=pid, version=p['version'], item=item['itemId'])
+    task = dict(created=time.time(), status='queued', kind='preview', proposal=pid, version=p['version'], item=item['itemId'], signature=item_signature(item))
     previews[tid] = task
     jobs.start(task, key, photo=photo['data'], image_url=item['imageUrl'], category='outer' if item['category'] == 'outer' else 'upper_body')
     return {'previewId':tid}
@@ -209,7 +217,7 @@ async def start_video(pid: str, body: dict):
     if not p['selected']: return err(409, 'Select this proposal first.')
     if body.get('duration') != 5 or body.get('resolution') != '480': return err(422, 'Use a 5-second video at 480p.')
     preview = previews.get(body.get('previewId', ''))
-    if not preview or preview['proposal'] != pid or preview['version'] != p['version'] or preview['status'] != 'success': return err(409, 'Generate a current preview for this proposal first.')
+    if not preview or preview['proposal'] != pid or not preview_is_current(preview, p) or preview['status'] != 'success': return err(409, 'Generate a current preview for this proposal first.')
     key = os.getenv('YOUCAM_API_KEY')
     if not key: return err(503, 'YouCam is not configured.')
     for tid, task in videos.items():

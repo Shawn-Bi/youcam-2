@@ -85,3 +85,19 @@ def test_preview_video_reuse_and_stale_guard(monkeypatch):
     assert client.get('/api/videos/'+video.json()['videoId']).json()['status'] == 'success'
     client.patch(base+'/items/'+item['itemId'],json={'size':'S'})
     assert client.post(base+'/videos',json=video_body).status_code == 409
+
+def test_lock_does_not_invalidate_preview(monkeypatch):
+    import app as module
+    monkeypatch.setenv('YOUCAM_API_KEY', 'test-key')
+    monkeypatch.setattr(module, 'PUBLIC_BASE_URL', 'https://example.com')
+    def fake_start(task, key, **kwargs):
+        task.update(status='success', imageUrl='https://example.com/preview.png')
+    monkeypatch.setattr(module.jobs, 'start', fake_start)
+    photo = client.post('/api/photos', data={'consent':'true'}, files={'photo':('photo.png',png(),'image/png')}).json()['photoId']
+    p = client.post('/api/briefs',json={'photoId':photo,'text':'concert','budget':120,'occasion':'concert','sizes':{'top':'M'},'keep':[]}).json()['proposals'][0]
+    base = '/api/proposals/'+p['id']
+    item = p['items'][0]
+    tid = client.post(base+'/previews',json={'itemId':item['itemId']}).json()['previewId']
+    assert client.patch(base+'/items/'+item['itemId'],json={'locked':True}).status_code == 200
+    assert client.post(base+'/previews',json={'itemId':item['itemId']}).json()['previewId'] == tid
+    assert module.preview_is_current(module.previews[tid], module.proposals[p['id']])
