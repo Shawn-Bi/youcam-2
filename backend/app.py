@@ -1,5 +1,7 @@
 """Look Exchange API. State is intentionally ephemeral for the demo."""
 import os
+import asyncio
+from contextlib import asynccontextmanager, suppress
 import io
 import warnings
 import time
@@ -15,7 +17,26 @@ from PIL import Image, UnidentifiedImageError
 from jobs import Jobs
 jobs = Jobs()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app):
+    async def sweep():
+        while True:
+            await asyncio.sleep(60)
+            clean()
+    sweeper = asyncio.create_task(sweep())
+    try:
+        yield
+    finally:
+        sweeper.cancel()
+        with suppress(asyncio.CancelledError):
+            await sweeper
+        pending = list(jobs.running)
+        for future in pending:
+            future.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+
+app = FastAPI(lifespan=lifespan)
 origins = [x.strip() for x in os.getenv("FRONTEND_ORIGINS", "http://localhost:3000").split(",") if x.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type"])
 @app.exception_handler(RequestValidationError)
@@ -71,12 +92,14 @@ class Brief(BaseModel):
     keep: list[str] = Field(default_factory=list)
 
 @app.get('/api/health')
-def health(): return {"status": "ok"}
+async def health(): return {"status": "ok"}
 
 @app.post('/api/photos')
 async def upload(photo: UploadFile = File(...), consent: str = Form(...)):
     clean()
     if consent.lower() != 'true': return err(422, 'Consent is required.')
+    if len(photos) >= 100 or sum(len(p['data']) for p in photos.values()) >= 100_000_000:
+        return err(503, 'Photo storage is temporarily full. Please retry later.')
     data = await photo.read(10_000_001)
     if len(data) > 10_000_000 or not (data.startswith(b'\xff\xd8\xff') or data.startswith(b'\x89PNG\r\n\x1a\n')): return err(422, 'A JPG or PNG under 10 MB is required.')
     try:
@@ -92,7 +115,7 @@ async def upload(photo: UploadFile = File(...), consent: str = Form(...)):
     return {"photoId": key}
 
 @app.post('/api/briefs')
-def create_brief(body: Brief):
+async def create_brief(body: Brief):
     clean(); errors = {}
     if body.photoId not in photos: errors['photoId'] = 'Upload a photo first.'
     if not body.text.strip(): errors['text'] = 'Enter a brief.'
@@ -106,7 +129,7 @@ def create_brief(body: Brief):
     return {'briefId': key, 'proposals': [public(p) for p in result]}
 
 @app.patch('/api/proposals/{pid}/items/{item_id}')
-def update(pid: str, item_id: str, patch: dict):
+async def update(pid: str, item_id: str, patch: dict):
     clean(); p = proposals.get(pid)
     if not p: return err(404, 'Proposal not found.')
     item = next ( (i for i in p['items'] if i['itemId'] == item_id), None)
@@ -119,7 +142,7 @@ def update(pid: str, item_id: str, patch: dict):
     return public(p)
 
 @app.post('/api/proposals/{pid}/replace')
-def replace(pid: str, body: dict):
+async def replace(pid: str, body: dict):
     clean(); p = proposals.get(pid)
     if not p: return err(404, 'Proposal not found.')
     item = next((i for i in p['items'] if i['itemId'] == body.get('itemId')), None)
@@ -133,7 +156,7 @@ def replace(pid: str, body: dict):
     return public(p)
 
 @app.post('/api/proposals/{pid}/select')
-def select(pid: str):
+async def select(pid: str):
     clean(); p = proposals.get(pid)
     if not p: return err(404, 'Proposal not found.')
     if not p['items']: return err(409, 'A proposal without items cannot be selected.')
@@ -165,7 +188,7 @@ async def start_preview(pid: str, body: dict):
     return {'previewId':tid}
 
 @app.get('/api/previews/{preview_id}')
-def get_preview(preview_id: str):
+async def get_preview(preview_id: str):
     clean()
     task = previews.get(preview_id)
     return jobs.public(task) if task else err(404, 'Preview not found.')
@@ -192,7 +215,7 @@ async def start_video(pid: str, body: dict):
     return {'videoId':tid}
 
 @app.get('/api/videos/{video_id}')
-def get_video(video_id: str):
+async def get_video(video_id: str):
     clean()
     task = videos.get(video_id)
     return jobs.public(task) if task else err(404, 'Video not found.')
