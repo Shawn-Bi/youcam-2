@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ApiError, ValidationError, createBrief, uploadPhoto } from "@/lib/api";
 import { loadLatestBrief, saveBrief } from "@/lib/briefStore";
+import { SIZES, getCatalogItem, getStore } from "@/lib/catalog";
 import type { FieldErrors } from "@/lib/types";
 
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const PHOTO_TYPES = ["image/jpeg", "image/png"];
 
@@ -25,6 +25,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 
 export function BriefForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const uid = useId();
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -56,6 +57,19 @@ export function BriefForm() {
     setBottomSize(input.sizes.bottom ?? "");
     setKeep(input.keep);
   }, []);
+
+  // Coming from a product page: start the brief around that piece and size.
+  useEffect(() => {
+    const item = getCatalogItem(searchParams.get("item") ?? "");
+    if (!item) return;
+    const store = getStore(item.storeId);
+    setText(`Build a look around the ${item.name} from ${store?.name ?? "the store"}.`);
+    const size = searchParams.get("size");
+    if (size && SIZES.includes(size)) {
+      if (item.category === "bottom") setBottomSize(size);
+      else if (item.category !== "bag") setTopSize(size);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!photo) {
