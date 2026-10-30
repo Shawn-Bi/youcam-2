@@ -25,8 +25,8 @@ Look Exchange 中的四家商店及其商品、价格和尺码都是为本次黑
 
 ## Current state / 当前状态
 
-- **Frontend** ([`frontend/`](frontend/README.md)): Next.js app with the brief screen working on mock data. Other screens are next.
+- **Frontend** ([`frontend/`](frontend/README.md)): every screen is built — shop, stores, products, brief, four-store proposals, try-on, video and saved look. Live at https://look-exchange.vercel.app, connected to the backend on Render.
 - **Backend:** not started.
 
-- **前端**（[`frontend/`](frontend/README.md)）：Next.js 应用，需求页已可用模拟数据运行，其余页面开发中。
+- **前端**（[`frontend/`](frontend/README.md)）：所有页面已完成——商店、商品、需求、四家商店的方案、试穿、视频和保存页。已上线 https://look-exchange.vercel.app，连接 Render 上的后端。
 - **后端：** 尚未开始。
