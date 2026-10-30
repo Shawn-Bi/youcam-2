@@ -85,7 +85,6 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
 type NoMatchProps = {
   proposal: Proposal;
   budget?: number;
-  /** Missing when the brief named no budget, so raising it can't help. */
   nextBudget?: number;
   busy: boolean;
   onRaiseBudget: () => void;

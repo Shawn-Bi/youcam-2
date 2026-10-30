@@ -50,7 +50,7 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
     try {
       const { budget } = brief.input;
       const next = raisedBudget(budget);
-      // The budget was read from the sentence, so raise it there too.
+      // Keep the sentence in step with the raised budget when it mentions an amount.
       const input = { ...brief.input, budget: next, text: replaceBudget(brief.input.text, budget, next) };
       const response = await createBrief(input);
       saveBrief(input, response);
