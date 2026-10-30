@@ -4,7 +4,6 @@ import { mainItem, needsSize } from "@/lib/items";
 import type { Item, Proposal } from "@/lib/types";
 import { ProductImage } from "./ProductImage";
 
-const chip = "rounded-full bg-sand px-3 py-1 text-label font-medium text-on-sand";
 const button =
   "min-h-12 flex-1 rounded-full px-5 text-body font-medium transition-colors disabled:cursor-wait";
 
@@ -57,17 +56,6 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
               </div>
             </li>
           ))}
-          {proposal.kept.length > 0 && (
-            <li>
-              <ul className="flex flex-wrap gap-2" aria-label="Pieces you're keeping">
-                {proposal.kept.map((piece) => (
-                  <li key={piece} className={chip}>
-                    Kept: {piece}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          )}
         </ul>
       </div>
 

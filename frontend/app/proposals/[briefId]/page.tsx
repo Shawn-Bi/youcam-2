@@ -91,17 +91,26 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
 
   return (
     <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-10 md:gap-8 md:px-8 lg:px-12 md:py-14">
-      <div className="flex flex-col gap-3">
-        <h1 className="font-display text-h1 font-medium text-ink md:text-display">{heading(matches)}</h1>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <p className="text-body text-ink">
-            &ldquo;{input.text}&rdquo;
-          </p>
-          <Link href="/brief" className="inline-flex min-h-11 items-center text-small font-medium text-sage underline">
-            Edit brief
-          </Link>
+      {/* The proposals speak for themselves; the count is for screen readers. */}
+      <h1 className="sr-only">{heading(matches)}</h1>
+      <section
+        aria-labelledby="your-brief"
+        className="flex flex-col gap-4 rounded-card bg-surface p-5 md:flex-row md:items-center md:justify-between md:gap-8 md:p-7"
+      >
+        <div className="flex flex-col gap-2">
+          <h2 id="your-brief" className="text-label font-medium tracking-[0.2em] text-terracotta-text uppercase">
+            Your brief
+          </h2>
+          <p className="font-display text-h2 text-ink md:text-h1">&ldquo;{input.text}&rdquo;</p>
+          {input.keep.length > 0 && <p className="text-small text-muted">Keeping: {input.keep.join(", ")}</p>}
         </div>
-      </div>
+        <Link
+          href="/brief"
+          className="flex min-h-12 shrink-0 items-center justify-center self-start rounded-full border border-sage px-7 text-body font-medium text-sage hover:bg-sage-tint hover:text-sage-hover md:self-center"
+        >
+          Edit brief
+        </Link>
+      </section>
 
       {error && (
         <p role="alert" className="rounded-field border border-danger/40 bg-surface px-4 py-3 text-small text-danger">
