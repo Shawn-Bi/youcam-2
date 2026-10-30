@@ -23,3 +23,17 @@ def test_brief_and_revision():
 def test_upload_and_budget_validation():
     assert client.post('/api/photos', data={'consent':'false'}, files={'photo':('a.png', b'bad', 'image/png')}).status_code == 422
     assert client.post('/api/briefs', json={'photoId':'missing', 'text':'', 'budget':0, 'occasion':'', 'sizes':{}, 'keep':[]}).status_code == 422
+
+def test_malformed_brief_has_contract_errors():
+    response = client.post('/api/briefs', json={'budget': 'bad'})
+    assert response.status_code == 422
+    assert 'budget' in response.json()['errors']
+    assert 'photoId' in response.json()['errors']
+
+def test_bad_item_patch_is_rejected():
+    response = client.post('/api/photos', data={'consent':'true'}, files={'photo':('test.png', b'\x89PNG\r\n\x1a\nfixture', 'image/png')})
+    payload = {'photoId':response.json()['photoId'], 'text':'concert', 'budget':120, 'occasion':'concert', 'sizes':{'top':'M'}, 'keep':[]}
+    proposal = client.post('/api/briefs', json=payload).json()['proposals'][0]
+    item_id = proposal['items'][0]['itemId']
+    response = client.patch(f"/api/proposals/{proposal['id']}/items/{item_id}", json={'size': []})
+    assert response.status_code == 422

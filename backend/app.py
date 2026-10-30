@@ -6,11 +6,21 @@ from copy import deepcopy
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.requests import Request
 from pydantic import BaseModel, Field
 
 app = FastAPI()
 origins = [x.strip() for x in os.getenv("FRONTEND_ORIGINS", "http://localhost:3000").split(",") if x.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type"])
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    errors = {}
+    for issue in exc.errors():
+        location = [str(part) for part in issue["loc"] if part not in ("body", "query", "path")]
+        errors[".".join(location) or "request"] = issue["msg"]
+    return JSONResponse(status_code=422, content={"errors": errors})
+
 photos, briefs, proposals, previews, videos = {}, {}, {}, {}, {}
 TTL = 3600
 
@@ -87,7 +97,7 @@ def update(pid: str, item_id: str, patch: dict):
     if not p: return err(404, 'Proposal not found.')
     item = next ( (i for i in p['items'] if i['itemId'] == item_id), None)
     if not item: return err(404, 'Item not found.')
-    if set(patch) not in ({'size'}, {'locked'}) or ('locked' in patch and not isinstance(patch['locked'], bool)): return err(422, 'Provide size or locked.')
+    if set(patch) not in ({'size'}, {'locked'}) or ('locked' in patch and not isinstance(patch['locked'], bool)) or ('size' in patch and not isinstance(patch['size'], str)): return err(422, 'Provide size or locked.')
     if 'size' in patch and patch['size'] not in item['sizesInStock']:
         alternatives = [public_item(i, patch['size']) for i in catalog(p['storeId']) if i['category'] == item['category'] and patch['size'] in i['sizesInStock'] and i['price'] + p['subtotal'] - item['price'] <= briefs[p['briefId']]['data'].budget]
         return JSONResponse(status_code=409, content={'code': 'out_of_stock', 'alternatives': alternatives})
@@ -112,6 +122,7 @@ def replace(pid: str, body: dict):
 def select(pid: str):
     clean(); p = proposals.get(pid)
     if not p: return err(404, 'Proposal not found.')
+    if not p['items']: return err(409, 'A proposal without items cannot be selected.')
     for other in proposals.values():
         if other['briefId'] == p['briefId']: other['selected'] = other is p
     return public(p)
