@@ -1,5 +1,7 @@
 """Look Exchange API. State is intentionally ephemeral for the demo."""
 import os
+import io
+import warnings
 import time
 import uuid
 from copy import deepcopy
@@ -9,6 +11,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from pydantic import BaseModel, Field
+from PIL import Image, UnidentifiedImageError
 
 app = FastAPI()
 origins = [x.strip() for x in os.getenv("FRONTEND_ORIGINS", "http://localhost:3000").split(",") if x.strip()]
@@ -74,6 +77,15 @@ async def upload(photo: UploadFile = File(...), consent: str = Form(...)):
     if consent.lower() != 'true': return err(422, 'Consent is required.')
     data = await photo.read(10_000_001)
     if len(data) > 10_000_000 or not (data.startswith(b'\xff\xd8\xff') or data.startswith(b'\x89PNG\r\n\x1a\n')): return err(422, 'A JPG or PNG under 10 MB is required.')
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(data)) as image:
+                if image.format not in ('JPEG', 'PNG'):
+                    return err(422, 'A JPG or PNG under 10 MB is required.')
+                image.verify()
+    except (UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError, Image.DecompressionBombWarning):
+        return err(422, 'The image is invalid or too large.')
     key = ident(); photos[key] = {"data": data, "created": time.time()}
     return {"photoId": key}
 

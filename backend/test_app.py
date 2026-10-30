@@ -1,10 +1,17 @@
+from io import BytesIO
+from PIL import Image
 from fastapi.testclient import TestClient
 from app import app
 
 client = TestClient(app)
 
+def png():
+    output = BytesIO()
+    Image.new('RGB', (10, 10), 'white').save(output, format='PNG')
+    return output.getvalue()
+
 def test_brief_and_revision():
-    response = client.post('/api/photos', data={'consent':'true'}, files={'photo':('test.png', b'\x89PNG\r\n\x1a\nfixture', 'image/png')})
+    response = client.post('/api/photos', data={'consent':'true'}, files={'photo':('test.png', png(), 'image/png')})
     assert response.status_code == 200
     photo = response.json()['photoId']
     response = client.post('/api/briefs', json={'photoId':photo, 'text':'black concert', 'budget':120, 'occasion':'concert', 'sizes':{'top':'M'}, 'keep':['boots']})
@@ -31,9 +38,14 @@ def test_malformed_brief_has_contract_errors():
     assert 'photoId' in response.json()['errors']
 
 def test_bad_item_patch_is_rejected():
-    response = client.post('/api/photos', data={'consent':'true'}, files={'photo':('test.png', b'\x89PNG\r\n\x1a\nfixture', 'image/png')})
+    response = client.post('/api/photos', data={'consent':'true'}, files={'photo':('test.png', png(), 'image/png')})
     payload = {'photoId':response.json()['photoId'], 'text':'concert', 'budget':120, 'occasion':'concert', 'sizes':{'top':'M'}, 'keep':[]}
     proposal = client.post('/api/briefs', json=payload).json()['proposals'][0]
     item_id = proposal['items'][0]['itemId']
     response = client.patch(f"/api/proposals/{proposal['id']}/items/{item_id}", json={'size': []})
+    assert response.status_code == 422
+
+
+def test_rejects_corrupt_images():
+    response = client.post('/api/photos', data={'consent':'true'}, files={'photo':('fake.png', b'\x89PNG\r\n\x1a\ninvalid', 'image/png')})
     assert response.status_code == 422
