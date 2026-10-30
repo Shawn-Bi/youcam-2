@@ -6,7 +6,7 @@
 
 ## 1. What you are building
 
-The whole user-facing app: a responsive React site where a shopper posts a brief, compares two stores' proposals, previews them on their own photo, revises, picks a store, generates a video, and saves. You never call YouCam directly; everything goes through Shawn's backend using the [shared contract](look-exchange-prd.md#6-shared-api-contract).
+The whole user-facing app: a responsive React site where a shopper posts a brief, compares four stores' proposals, previews them on their own photo, revises, picks a store, generates a video, and saves. You never call YouCam directly; everything goes through Shawn's backend using the [shared contract](look-exchange-prd.md#6-shared-api-contract).
 
 ## 2. Stack
 
@@ -37,7 +37,7 @@ Colors, fonts, spacing and the favicon come from Dennis's design system and go i
 ## 3. Screens
 
 ### 3.0 Shop (new)
-- Home (`/`): photo hero "Two stores. One look. Yours." with "Post a style brief" and "Browse the shops", a tile for each store, and a "New in" row.
+- Home (`/`): photo hero "Four stores. One look. Yours." with "Post a style brief" and "Browse the shops", a tile for each store, and a "New in" row.
 - All products (`/shop`), stores (`/stores`), one store (`/stores/:storeId`): product grid with filters for category, store, size and price, and a "Not sure? Post a style brief" banner.
 - Product (`/products/:itemId`): photo, price, size buttons (sold-out sizes disabled), "More from" the store, and "Style a look around this", which opens `/brief?item=…&size=…` with the piece written into the brief.
 - All product data comes from the shared catalog `data/catalog.json`; photos are in `public/catalog/`. No cart.

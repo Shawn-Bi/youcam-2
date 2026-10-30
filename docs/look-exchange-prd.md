@@ -20,13 +20,13 @@
 
 Shoppers describe the look they want; stores compete to win it with personalized, shoppable try-on proposals.
 
-Example brief: *"Silver-and-black concert look, under $120, size M. Keep my boots."* Two sample stores each answer with a proposal (a jacket or top, plus an optional bag) in the shopper's size and budget. The shopper previews each proposal **on their own photo** through YouCam virtual try-on, swaps items or sizes, picks the store they like, and can turn the final look into a **short AI video**.
+Example brief: *"Silver-and-black concert look, under $120, size M. Keep my boots."* Four sample stores (Northline, Mono Studio, Sol Social, Haven) each answer with a proposal (a jacket or top, plus an optional bag) in the shopper's size and budget. The shopper previews each proposal **on their own photo** through YouCam virtual try-on, swaps items or sizes, picks the store they like, and can turn the final look into a **short AI video**.
 
 **Why it wins the hackathon:** it uses three YouCam APIs in one flow (clothes try-on, bag try-on, image-to-video) for a real eCommerce decision: *which store's look should I buy?*
 
 The stores are **sample stores** with local catalogs. The app presents them like real stores, with no badge; the README explains once that they are samples. No payments, no live bidding.
 
-**Shared catalog:** both stores' products live in one file, `frontend/data/catalog.json` (24 items with AI-generated product photos in `frontend/public/catalog/`). The shop pages read it directly, and the backend reads the same file to build proposals, so prices, sizes and photos always match. Dennis owns the file; change it together.
+**Shared catalog:** all four stores' products live in one file, `frontend/data/catalog.json` (48 items, 12 per store, with AI-generated product photos in `frontend/public/catalog/`). The shop pages read it directly, and the backend reads the same file to build proposals, so prices, sizes and photos always match. Dennis owns the file; change it together.
 
 ### 2. User flow
 
@@ -36,7 +36,7 @@ The stores are **sample stores** with local catalogs. The app presents them like
 Full detail with diagrams: [look-exchange-user-flow.md](look-exchange-user-flow.md).
 
 1. **Brief** — upload a photo (with consent), write the brief, choose budget, occasion, **sizes**, and pieces to keep.
-2. **Proposals** — two sample stores each return one proposal: items in the shopper's size, prices, subtotal, styling note.
+2. **Proposals** — all four sample stores each return one proposal: items in the shopper's size, prices, subtotal, styling note.
 3. **Preview** — "Preview on me" runs YouCam try-on for the proposal's top/jacket and bag. Results sit beside the product photos.
 4. **Revise** — lock items, replace one, or change a size. Only the changed item's preview is regenerated.
 5. **Pick a store** — the shopper selects the proposal they like best.
@@ -47,7 +47,7 @@ Full detail with diagrams: [look-exchange-user-flow.md](look-exchange-user-flow.
 
 **P0 — required to submit**
 - Brief screen with photo upload, consent, sizes, budget.
-- Two sample-store catalogs; proposals filtered by size, budget and availability, checked in code.
+- Four sample-store catalogs; proposals filtered by size, budget and availability, checked in code.
 - Real YouCam clothes try-on from the deployed app.
 - Proposal comparison, lock/replace, size change.
 - Video generation for the picked proposal.
@@ -73,7 +73,7 @@ All verified against the official docs on October 30, 2026. Server: `https://yce
 
 Video request basics: `src_file_url` or `src_file_id` (the try-on result image), `dst_duration` 5 or 10, `resolution` `"480"`/`"720"`/`"1080"`, optional `prompt` (max 1,500 characters), `model: "youcam-video-v2"`. Input: JPG/PNG under 10 MB, aspect ratio between 1:2.5 and 2.5:1.
 
-The hackathon gives **1,000 free units** per account via a redeem code on the [Resources page](https://youcam-api-skin-ai-ecommerce.devpost.com/resources). One full demo run (clothes + bag + 5 s video at 480p) costs roughly 9–10 units, so the budget is fine if the backend caps retries.
+The hackathon gives **1,000 free units** per account via a redeem code on the [Resources page](https://youcam-api-skin-ai-ecommerce.devpost.com/resources). One full demo run (clothes + bag + 5 s video at 480p) costs roughly 9–10 units, so the budget is fine if the backend caps retries. With four stores, previewing every proposal plus one video is roughly 20–25 units, still about 40 full demo runs. Previews only run when the shopper taps "Preview on me", never automatically for all four.
 
 ### 5. Architecture
 
@@ -179,13 +179,13 @@ type Proposal = {
 
 用户描述想要的造型，商店用个性化、可购买的试穿方案来争取这笔订单。
 
-示例需求：*“银黑色演唱会造型，预算 120 美元以内，M 码，保留我的靴子。”* 两家示例商店各给出一个方案（一件上衣或外套，加一个可选包袋），符合用户的尺码和预算。用户通过 YouCam 虚拟试穿**在自己的照片上**预览每个方案，可替换商品或尺码，选出喜欢的商店，并可把最终造型生成一段**简短的 AI 视频**。
+示例需求：*“银黑色演唱会造型，预算 120 美元以内，M 码，保留我的靴子。”* 四家示例商店（Northline、Mono Studio、Sol Social、Haven）各给出一个方案（一件上衣或外套，加一个可选包袋），符合用户的尺码和预算。用户通过 YouCam 虚拟试穿**在自己的照片上**预览每个方案，可替换商品或尺码，选出喜欢的商店，并可把最终造型生成一段**简短的 AI 视频**。
 
 **为什么能在黑客松中脱颖而出：** 一个流程里使用三个 YouCam API（服装试穿、包袋试穿、图片生成视频），解决真实的电商决策问题：*该买哪家店的造型？*
 
 商店均为**示例商店**，使用本地商品目录。应用中按真实商店样式展示，不加标签；README 中统一说明它们是示例。不涉及支付，也没有真实竞价。
 
-**共享商品目录：** 两家商店的商品都在同一个文件 `frontend/data/catalog.json` 中（24 件商品，AI 生成的商品图在 `frontend/public/catalog/`）。购物页面直接读取它，后端也读取同一个文件来生成方案，因此价格、尺码和图片始终一致。该文件由 Dennis 负责，修改时双方一起商量。
+**共享商品目录：** 四家商店的商品都在同一个文件 `frontend/data/catalog.json` 中（48 件商品，每家 12 件，AI 生成的商品图在 `frontend/public/catalog/`）。购物页面直接读取它，后端也读取同一个文件来生成方案，因此价格、尺码和图片始终一致。该文件由 Dennis 负责，修改时双方一起商量。
 
 ### 2. 用户流程
 
@@ -195,7 +195,7 @@ type Proposal = {
 详细流程图见 [look-exchange-user-flow.md](look-exchange-user-flow.md)。
 
 1. **需求** — 上传照片（需同意授权），填写需求，选择预算、场合、**尺码**和要保留的单品。
-2. **方案** — 两家示例商店各返回一个方案：符合尺码的商品、价格、小计和搭配说明。
+2. **方案** — 四家示例商店各返回一个方案：符合尺码的商品、价格、小计和搭配说明。
 3. **预览** — “在我身上预览”调用 YouCam 试穿上衣/外套和包袋，结果与商品图并排展示。
 4. **修改** — 锁定商品、替换一件或更换尺码，只重新生成受影响商品的预览。
 5. **选择商店** — 用户选出最喜欢的方案。
@@ -206,7 +206,7 @@ type Proposal = {
 
 **P0 — 提交必需**
 - 需求页：照片上传、授权、尺码、预算。
-- 两个示例商店目录；方案按尺码、预算和库存筛选，由代码校验。
+- 四个示例商店目录；方案按尺码、预算和库存筛选，由代码校验。
 - 从已部署的应用发起真实的 YouCam 服装试穿。
 - 方案比较、锁定/替换、更换尺码。
 - 为选中的方案生成视频。
@@ -232,7 +232,7 @@ type Proposal = {
 
 视频请求要点：`src_file_url` 或 `src_file_id`（试穿结果图）、`dst_duration` 为 5 或 10、`resolution` 为 `"480"`/`"720"`/`"1080"`、可选 `prompt`（最多 1,500 字符）、`model: "youcam-video-v2"`。输入：JPG/PNG，小于 10 MB，宽高比在 1:2.5 到 2.5:1 之间。
 
-黑客松在 [Resources 页面](https://youcam-api-skin-ai-ecommerce.devpost.com/resources) 提供兑换码，每个账号可领 **1,000 免费单位**。一次完整演示（服装 + 包袋 + 480p 5 秒视频）约 9–10 单位，只要后端限制重试次数，额度足够。
+黑客松在 [Resources 页面](https://youcam-api-skin-ai-ecommerce.devpost.com/resources) 提供兑换码，每个账号可领 **1,000 免费单位**。一次完整演示（服装 + 包袋 + 480p 5 秒视频）约 9–10 单位，只要后端限制重试次数，额度足够。四家商店时，预览全部方案再加一段视频约 20–25 单位，仍可完整演示约 40 次。预览只在用户点击“Preview on me”时运行，不会自动为四家都生成。
 
 ### 5. 系统架构
 

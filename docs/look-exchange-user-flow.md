@@ -20,7 +20,7 @@ flowchart TD
     B --> C[Write brief: style, budget, sizes, pieces to keep]
     C --> D{Brief valid?}
     D -- No --> C
-    D -- Yes --> E[Two stores build proposals]
+    D -- Yes --> E[Four stores build proposals]
     E --> F{Matches found?}
     F -- No --> G[No-match state: loosen budget or style]
     G --> C
@@ -59,7 +59,7 @@ flowchart TD
 - The backend turns the brief into structured data. If a required part is missing or unclear (no budget, impossible budget, no size), the shopper is asked to fix it before stores search.
 
 **4. Stores build proposals**
-- Two sample stores each assemble one proposal from their own catalog. The app shows them like real stores; the README explains they are samples.
+- Four sample stores each assemble one proposal from their own catalog. The app shows them like real stores; the README explains they are samples.
 - Stores only propose items available in the shopper's chosen size. Availability is checked in code against the catalog, not left to the language model.
 - A progress state shows each store “building a proposal.”
 - If a store finds no valid match, it says so. The app never invents a product.
@@ -123,7 +123,7 @@ flowchart TD
     B --> C[填写需求：风格、预算、尺码、保留单品]
     C --> D{需求有效？}
     D -- 否 --> C
-    D -- 是 --> E[两家商店生成方案]
+    D -- 是 --> E[四家商店生成方案]
     E --> F{找到匹配商品？}
     F -- 否 --> G[无匹配：放宽预算或风格]
     G --> C
@@ -162,7 +162,7 @@ flowchart TD
 - 后端将需求转为结构化数据。若缺少必要信息或信息不明确（没有预算、预算不可行、没有尺码），先请用户修改，再开始检索。
 
 **4. 商店生成方案**
-- 两家示例商店各自从自己的目录组装一个方案。应用中按真实商店样式展示；README 中说明它们是示例。
+- 四家示例商店各自从自己的目录组装一个方案。应用中按真实商店样式展示；README 中说明它们是示例。
 - 商店只推荐用户所选尺码有货的商品。库存由代码根据目录核对，不交给语言模型判断。
 - 进度状态显示每家商店“正在生成方案”。
 - 若商店找不到有效商品，会直接说明，系统绝不编造商品。

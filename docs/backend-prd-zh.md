@@ -70,7 +70,7 @@ Dennis 之前在另一个黑客松项目里写过经过测试的 YouCam 适配�
 | 接口 | 后端要做的事 |
 | --- | --- |
 | `POST /api/photos` | 校验 `consent=true`、JPG/PNG、小于 10 MB；保存在内存或临时目录；返回 `photoId` |
-| `POST /api/briefs` | 校验预算、上衣尺码等必填项（不合格返回 `422` 和字段错误）；为两家商店各生成一个方案 |
+| `POST /api/briefs` | 校验预算、上衣尺码等必填项（不合格返回 `422` 和字段错误）；为四家商店各生成一个方案 |
 | `PATCH /api/proposals/:id/items/:itemId` | 改尺码或锁定状态；尺码无货时返回 `409 out_of_stock` 和同尺码替代品 |
 | `POST /api/proposals/:id/replace` | 保留锁定商品，替换指定商品，重新计算小计，`version + 1` |
 | `POST /api/proposals/:id/previews` | 上传照片和商品图，创建服装（或包袋）试穿任务，返回 `previewId` |
@@ -98,7 +98,7 @@ Dennis 之前在另一个黑客松项目里写过经过测试的 YouCam 适配�
 
 ## 6. 商品目录与方案生成
 
-- **商品目录已经做好，你不用再做：** 直接读取 `frontend/data/catalog.json`。里面有两家商店（`stores`）和 24 件商品（`items`），每家 12 件。前端的购物页面读同一个文件，所以价格、尺码和图片会一致。需要改目录时先和 Dennis 商量。
+- **商品目录已经做好，你不用再做：** 直接读取 `frontend/data/catalog.json`。里面有四家商店（`stores`）和 48 件商品（`items`），每家 12 件。每家商店还有 `tone`（`dark`/`light`），只给前端用。前端的购物页面读同一个文件，所以价格、尺码和图片会一致。需要改目录时先和 Dennis 商量。
 - 每件商品：`itemId`、`storeId`、`name`、`category`（`top`/`outer`/`bottom`/`bag`）、`price`、`sizesInStock`（包袋为空数组）、`colors`、`styleTags`、`imageUrl`、`productUrl`。
 - 商品图是 AI 生成的纯色背景平铺图，放在 `frontend/public/catalog/`，适合 YouCam 试穿。
 - **`imageUrl` 和 `productUrl` 是相对路径**（例如 `/catalog/nl_racer_jacket.jpg`、`/products/nl_racer_jacket`）。返回给前端时原样返回即可。发给 YouCam 时要拼上前端的公开域名，例如 `${FRONTEND_PUBLIC_URL}/catalog/nl_racer_jacket.jpg`（把 `FRONTEND_PUBLIC_URL` 放进环境变量，部署后 Dennis 发给你）。
