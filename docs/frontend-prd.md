@@ -46,8 +46,8 @@ Colors, fonts, spacing and the favicon come from Dennis's design system and go i
 - Photo upload: drag/drop or file picker, preview, JPG/PNG only, under 10 MB, clear error text.
 - Consent checkbox, required: "I agree to send this photo to YouCam for try-on processing." Link to a short privacy note.
 - Layout (concept C2): title "Tell us the look" centered; full-body photo on the left with the consent line under it; on the right, one sentence "The look you want" and "Pieces you already own and want to keep" (chips). Fits one desktop screen.
-- No budget, occasion or size fields. `lib/parseBrief.ts` reads a size ("in size S", "I wear a medium") and a budget ("under $120", "80 dollars") from the sentence and shows "We'll use: Size S · Up to $120" under it. Without a size, proposal cards list the sizes in stock and the shopper chooses one before "Pick this store".
-- "Get proposals" needs a photo, consent and the sentence.
+- Budget (required), top or jacket size (required) and bottoms size (optional) sit under the sentence, matching the backend. `lib/parseBrief.ts` reads a size ("in size S", "I wear a medium") and a budget ("under $120", "80 dollars") from the sentence and fills those fields until the shopper edits them by hand. No occasion field.
+- "Get proposals" needs a photo, consent, the sentence, a budget and a top size. A 422 error for a field the form doesn't show appears above the button.
 - Calls `POST /api/photos` then `POST /api/briefs`. Show `422` field errors next to the right field.
 
 ### 3.2 Proposals (`/proposals/:briefId`) — concept `02-proposals.png`

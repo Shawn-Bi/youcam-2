@@ -35,7 +35,7 @@ The stores are **sample stores** with local catalogs. The app presents them like
 
 Full detail with diagrams: [look-exchange-user-flow.md](look-exchange-user-flow.md).
 
-1. **Brief** — add a full-body photo (with consent), describe the look in one sentence, and list pieces to keep. Size and budget are read from the sentence when mentioned ("in size S, under $120"); there are no separate fields.
+1. **Brief** — add a full-body photo (with consent), describe the look, and set a **budget** and **top size** (bottoms size optional) plus pieces to keep. A size or budget mentioned in the sentence ("in size S, under $120") fills those fields in.
 2. **Proposals** — all four sample stores each return one proposal: items in the shopper's size, prices, subtotal, styling note.
 3. **Preview** — "Preview on me" runs YouCam try-on for the proposal's top/jacket and bag. Results sit beside the product photos.
 4. **Revise** — lock items, replace one, or change a size. Only the changed item's preview is regenerated.
@@ -46,7 +46,7 @@ Full detail with diagrams: [look-exchange-user-flow.md](look-exchange-user-flow.
 ### 3. Scope
 
 **P0 — required to submit**
-- Brief screen with photo upload, consent, one look sentence and pieces to keep.
+- Brief screen with photo upload, consent, look sentence, budget, sizes and pieces to keep.
 - Four sample-store catalogs; proposals filtered by size, budget and availability, checked in code.
 - Real YouCam clothes try-on from the deployed app.
 - Proposal comparison, lock/replace, size change.
@@ -99,7 +99,7 @@ Both sides build against this contract from day one. The frontend uses mock JSON
 | Method + path | Request | Response |
 | --- | --- | --- |
 | `POST /api/photos` | multipart `photo`, `consent=true` | `{ photoId }` |
-| `POST /api/briefs` | `{ photoId, text, budget?, sizes?: { top?, bottom? }, keep: [] }` (budget and size are optional, read from `text` by the frontend; no budget = no price cap; no size = items return with `size: null` and the shopper chooses on the proposal page) | `{ briefId, proposals: Proposal[] }` or `422 { errors: { field: message } }` |
+| `POST /api/briefs` | `{ photoId, text, budget, sizes: { top, bottom? }, keep: [] }` (`occasion` is optional and no longer sent) | `{ briefId, proposals: Proposal[] }` or `422 { errors: { field: message } }` |
 | `PATCH /api/proposals/:id/items/:itemId` | `{ size }` or `{ locked }` | `Proposal` or `409 { code: "out_of_stock", alternatives: Item[] }` |
 | `POST /api/proposals/:id/replace` | `{ itemId, instruction? }` | `Proposal` |
 | `POST /api/proposals/:id/previews` | `{ itemId }` | `{ previewId }` |
@@ -194,7 +194,7 @@ type Proposal = {
 
 详细流程图见 [look-exchange-user-flow.md](look-exchange-user-flow.md)。
 
-1. **需求** — 上传全身照（需同意授权），用一句话描述想要的造型，并列出要保留的单品。句子里提到的尺码和预算（例如“in size S, under $120”）会被自动读取，不再有单独的字段。
+1. **需求** — 上传全身照（需同意授权），描述想要的造型，填写**预算**和**上衣尺码**（下装尺码可选），并列出要保留的单品。句子里提到的尺码和预算（例如“in size S, under $120”）会自动填进这些字段。
 2. **方案** — 四家示例商店各返回一个方案：符合尺码的商品、价格、小计和搭配说明。
 3. **预览** — “在我身上预览”调用 YouCam 试穿上衣/外套和包袋，结果与商品图并排展示。
 4. **修改** — 锁定商品、替换一件或更换尺码，只重新生成受影响商品的预览。
