@@ -9,6 +9,8 @@ export type PollState = TaskResult | { status: "timeout" };
 type Options = {
   /** Give up after this long and report "timeout". */
   timeoutMs: number;
+  /** Change this to check the same task again after a timeout, without starting a new one. */
+  restartKey?: number;
 };
 
 const FAST_MS = 2000;
@@ -24,11 +26,13 @@ const SLOW_AFTER_MS = 20000;
 export function usePollStatus(
   id: string | null,
   fetchStatus: (id: string) => Promise<TaskResult>,
-  { timeoutMs }: Options,
+  { timeoutMs, restartKey = 0 }: Options,
 ): PollState | null {
   const [state, setState] = useState<PollState | null>(null);
   const fetchRef = useRef(fetchStatus);
-  fetchRef.current = fetchStatus;
+  useEffect(() => {
+    fetchRef.current = fetchStatus;
+  });
 
   useEffect(() => {
     if (!id) {
@@ -68,7 +72,7 @@ export function usePollStatus(
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [id, timeoutMs]);
+  }, [id, timeoutMs, restartKey]);
 
   return state;
 }
