@@ -81,6 +81,21 @@ Dennis 之前在另一个黑客松项目里写过经过测试的 YouCam 适配�
 
 数据类型 `Item`、`Proposal` 见主 PRD 第 6 节。修改契约前先和 Dennis 商量，并更新主 PRD。
 
+### 5.1 前端对接要点
+
+前端已经完成，目前用模拟数据运行。接上真实后端时，下面这些细节必须一致，否则前端会报错或显示不出来。
+
+1. **CORS：** 允许前端的 Vercel 域名（部署后 Dennis 发给你）和本地 `http://localhost:3000`。需要允许 `GET`、`POST`、`PATCH` 方法和 `Content-Type` 请求头。前端不发送 cookie。
+2. **照片上传：** `POST /api/photos` 使用 `multipart/form-data`，字段名是 `photo`（文件）和 `consent`（字符串 `"true"`）。其他接口都是 JSON。
+3. **图片和视频必须是公开 URL：** 商品 `imageUrl`、试穿结果 `imageUrl`、视频 `videoUrl` 都由浏览器直接加载，不能需要密钥或登录。YouCam 也要通过 URL 读取照片和商品图。如果返回 YouCam 的签名 URL，要确保它在会话期间（约 1 小时）不会过期，否则请转存后再返回。
+4. **`422` 字段错误：** 返回 `{ "errors": { "字段": "提示文字" } }`。前端只认这几个字段名：`photo`、`consent`、`text`、`budget`、`topSize`，提示文字会直接显示给用户，请用英文写。
+5. **`409` 尺码无货：** 必须是 `{ "code": "out_of_stock", "alternatives": Item[] }`。`code` 不对的话，前端只会显示通用错误。
+6. **其他错误：** 任何其他非 2xx 响应，前端都显示通用提示“Something went wrong”。
+7. **替换商品：** 替换后的商品必须有新的 `itemId`。前端靠新 `itemId` 判断哪件被替换了，并要求用户重新生成试穿预览。
+8. **任务状态：** `GET /api/previews/:id` 和 `GET /api/videos/:id` 返回 `{ status, imageUrl?, videoUrl?, error? }`，`status` 只能是 `queued`、`running`、`success`、`failed`。`success` 时必须带 `imageUrl` 或 `videoUrl`。`failed` 时的 `error` 会显示给用户，请用英文写。前端每 2 秒查询一次，20 秒后改为每 5 秒；预览最多等 90 秒，视频最多等 4 分钟。
+9. **视频请求：** 前端发送 `{ "previewId": "...", "duration": 5, "resolution": "480" }`。`previewId` 是该方案主单品（上衣或外套）的试穿结果，前端只在预览成功后才允许生成视频。
+10. **任务 ID 要能重复查询：** 视频超时后，前端会用同一个 `videoId` 再次查询，不会新建任务（避免重复花费单位）。所以任务记录至少保留 1 小时。
+
 ## 6. 商品目录与方案生成
 
 - 两个 JSON 目录，例如 `catalogs/northline.json`、`catalogs/mono-studio.json`，每家 8–12 件商品即可。
