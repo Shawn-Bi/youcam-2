@@ -30,7 +30,9 @@ export function usePollStatus(
 ): PollState | null {
   const [state, setState] = useState<PollState | null>(null);
   const fetchRef = useRef(fetchStatus);
-  fetchRef.current = fetchStatus;
+  useEffect(() => {
+    fetchRef.current = fetchStatus;
+  });
 
   useEffect(() => {
     if (!id) {
