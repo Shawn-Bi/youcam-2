@@ -7,6 +7,8 @@
 ## Potential PRD / 候选产品需求简述
 
 - [Look Exchange — English + 简体中文](docs/look-exchange-potential-prd.md)
+- [User flow / 用户流程 — English + 简体中文](docs/look-exchange-user-flow.md)
+- Concept images / 概念图: [brief](docs/concepts/01-brief.png) · [proposals](docs/concepts/02-proposals.png) · [preview & revise](docs/concepts/03-preview-revise.png)
 
 Current scope: concept documentation only. API access, integration quality, and FitFindr reuse permissions still need verification before implementation.
 
