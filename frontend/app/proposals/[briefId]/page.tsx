@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import { NoMatchCard, ProposalCard } from "@/components/ProposalCard";
 import { ApiError, createBrief, selectProposal } from "@/lib/api";
 import { loadBrief, saveBrief, saveProposal, type StoredBrief } from "@/lib/briefStore";
+import { stores } from "@/lib/catalog";
 import { formatPrice, raisedBudget } from "@/lib/format";
 import type { Proposal } from "@/lib/types";
 
@@ -60,8 +61,9 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
       <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-10 md:px-8 lg:px-12" aria-busy="true">
         <div className="h-10 w-2/3 rounded-field bg-sage-tint" />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="h-96 rounded-card border border-line bg-surface" />
-          <div className="h-96 rounded-card border border-line bg-surface" />
+          {stores.map((s) => (
+            <div key={s.storeId} className="h-96 rounded-card border border-line bg-surface" />
+          ))}
         </div>
       </main>
     );

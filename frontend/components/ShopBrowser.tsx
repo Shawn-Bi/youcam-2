@@ -162,7 +162,7 @@ export function BriefBanner() {
         <span aria-hidden="true" className="mr-2 text-sage">
           ✦
         </span>
-        Not sure? Post a style brief and both stores will style you.
+        Not sure? Post a style brief and all four stores will style you.
       </p>
       <Link
         href="/brief"

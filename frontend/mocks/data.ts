@@ -22,6 +22,20 @@ const plansFor = (key: string): Plan[] => [
     itemIds: ["ms_shine_jacket", "ms_nova_bag"],
     rationale: "Minimal black shine with a silver chain bag, easy to move in all night.",
   },
+  {
+    id: `prop_sol_${key}`,
+    storeId: "sol-social",
+    storeName: "Sol Social",
+    itemIds: ["sol_sequin_jacket", "sol_beaded_bag"],
+    rationale: "A silver sequin jacket that catches every stage light, with a beaded bag for a pop of color.",
+  },
+  {
+    id: `prop_haven_${key}`,
+    storeId: "haven",
+    storeName: "Haven",
+    itemIds: ["hv_quilted_jacket", "hv_canvas_sling"],
+    rationale: "A soft quilted layer that stays comfortable all night, with a hands-free sling for the crowd.",
+  },
 ];
 
 const sizeFor = (item: CatalogItem, input: BriefInput) =>

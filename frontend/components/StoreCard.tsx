@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { Store } from "@/lib/catalog";
 
 /** A large photo card for one store, with its name and tagline over the image. */
-export function StoreCard({ store, dark, headingLevel = 3 }: { store: Store; dark: boolean; headingLevel?: 2 | 3 }) {
+export function StoreCard({ store, headingLevel = 3 }: { store: Store; headingLevel?: 2 | 3 }) {
+  // Dark-toned photos get white text over a dark fade; light ones get ink over stone.
+  const dark = store.tone === "dark";
   const Heading = headingLevel === 2 ? "h2" : "h3";
   return (
     <Link

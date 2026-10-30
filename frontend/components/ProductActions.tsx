@@ -54,7 +54,7 @@ export function ProductActions({ item }: { item: CatalogItem }) {
           Style a look around this
         </Link>
         <p className="text-small text-muted">
-          Post a style brief with this piece. Both stores build an outfit around it that you can try on your own photo.
+          Post a style brief with this piece. Its store builds an outfit around it, the other three answer too, and you try each look on your own photo.
         </p>
       </div>
     </div>

@@ -8,8 +8,13 @@ const chip = "rounded-full bg-sand px-3 py-1 text-label font-medium text-on-sand
 const button =
   "min-h-12 flex-1 rounded-full px-5 text-body font-medium transition-colors disabled:cursor-wait";
 
-/** Each store keeps one accent dot, so the two columns are easy to tell apart. */
-const STORE_DOT: Record<string, string> = { northline: "bg-terracotta", "mono-studio": "bg-sage" };
+/** Each store keeps one accent dot, so the four proposals are easy to tell apart. */
+const STORE_DOT: Record<string, string> = {
+  northline: "bg-ink",
+  "mono-studio": "bg-sage",
+  "sol-social": "bg-terracotta",
+  haven: "bg-sand",
+};
 
 type Props = {
   proposal: Proposal;
@@ -24,7 +29,7 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
   return (
     <article aria-labelledby={headingId} className="flex flex-col gap-5 rounded-card bg-surface p-4 md:p-6">
       <div className="flex items-start gap-3">
-        <span aria-hidden="true" className={`mt-2 size-4 shrink-0 rounded-full ${STORE_DOT[proposal.storeId] ?? "bg-sand"}`} />
+        <span aria-hidden="true" className={`mt-2 size-4 shrink-0 rounded-full ${STORE_DOT[proposal.storeId] ?? "bg-line"}`} />
         <div className="flex flex-col gap-1">
           <h2 id={headingId} className="font-display text-h1 font-medium text-ink">
             {proposal.storeName}
@@ -99,7 +104,7 @@ export function NoMatchCard({ proposal, budget, nextBudget, busy, onRaiseBudget 
   return (
     <article aria-labelledby={headingId} className="flex flex-col gap-4 self-start rounded-card border border-dashed border-line bg-surface p-4 md:p-6">
       <div className="flex items-start gap-3">
-        <span aria-hidden="true" className={`mt-2 size-4 shrink-0 rounded-full ${STORE_DOT[proposal.storeId] ?? "bg-sand"}`} />
+        <span aria-hidden="true" className={`mt-2 size-4 shrink-0 rounded-full ${STORE_DOT[proposal.storeId] ?? "bg-line"}`} />
         <div className="flex flex-col gap-1">
           <h2 id={headingId} className="font-display text-h1 font-medium text-ink">
             {proposal.storeName}

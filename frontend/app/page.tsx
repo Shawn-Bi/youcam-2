@@ -3,7 +3,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { StoreCard } from "@/components/StoreCard";
 import { getCatalogItem, stores, type CatalogItem } from "@/lib/catalog";
 
-const NEW_IN = ["nl_racer_jacket", "ms_knit_sweater", "nl_chrome_cami", "ms_nova_bag"]
+const NEW_IN = ["nl_racer_jacket", "sol_sequin_jacket", "hv_chunky_cardigan", "ms_nova_bag"]
   .map(getCatalogItem)
   .filter((i): i is CatalogItem => Boolean(i));
 
@@ -21,12 +21,12 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-stone via-stone/70 to-transparent md:bg-gradient-to-r md:from-stone/95 md:via-stone/55 md:via-45% md:to-transparent md:to-70%" />
         <div className="relative mx-auto flex min-h-[600px] max-w-page flex-col justify-end gap-7 px-4 pt-56 pb-10 md:min-h-[680px] md:justify-center md:px-8 lg:px-12 md:py-20">
           <h1 className="max-w-md font-display text-display font-medium text-ink md:max-w-sm lg:max-w-3xl lg:text-hero">
-            Two stores.
+            Four stores.
             <br />
             One look. Yours.
           </h1>
           <p className="max-w-sm text-body text-ink md:text-h2 md:font-display lg:max-w-lg">
-            Describe the look you want. Two stores style you, and you try it on your own photo.
+            Describe the look you want. Four stores style you, and you try each look on your own photo.
           </p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link
@@ -60,8 +60,8 @@ export default function Home() {
           Shop the stores
         </h2>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {stores.map((store, i) => (
-            <StoreCard key={store.storeId} store={store} dark={i === 0} />
+          {stores.map((store) => (
+            <StoreCard key={store.storeId} store={store} />
           ))}
         </div>
       </section>
