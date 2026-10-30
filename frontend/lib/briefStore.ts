@@ -26,6 +26,27 @@ export function saveProposal(briefId: string, proposal: Proposal) {
   saveBrief(stored.input, { ...stored.response, proposals });
 }
 
+// Preview task ids per proposal, so coming back to a proposal doesn't start (and pay for) new try-ons.
+const PREVIEWS_KEY = "look-exchange:previews";
+
+export function loadPreviews(proposalId: string): Record<string, string> {
+  try {
+    const all = JSON.parse(sessionStorage.getItem(PREVIEWS_KEY) ?? "{}");
+    return all[proposalId] ?? {};
+  } catch {
+    return {};
+  }
+}
+
+export function savePreviews(proposalId: string, previews: Record<string, string>) {
+  try {
+    const all = JSON.parse(sessionStorage.getItem(PREVIEWS_KEY) ?? "{}");
+    sessionStorage.setItem(PREVIEWS_KEY, JSON.stringify({ ...all, [proposalId]: previews }));
+  } catch {
+    // Previews still work for this visit; they just won't survive a reload.
+  }
+}
+
 /** The most recent brief in this tab, used to refill the form when the shopper edits it. */
 export function loadLatestBrief(): StoredBrief | null {
   try {

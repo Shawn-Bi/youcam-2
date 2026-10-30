@@ -110,7 +110,7 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
               key={p.id}
               proposal={p}
               busy={busyId !== null}
-              onPreview={() => router.push(`/proposals/${briefId}/${p.id}`)}
+              onPreview={() => router.push(`/proposals/${briefId}/${p.id}?preview=1`)}
               onPick={() => pick(p)}
             />
           ) : (
