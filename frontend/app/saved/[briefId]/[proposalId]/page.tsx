@@ -7,7 +7,7 @@ import { FrameLabel } from "@/components/TryOnViewer";
 import { getPreview, getVideo } from "@/lib/api";
 import { loadBrief, loadPreviews, loadVideo } from "@/lib/briefStore";
 import { formatPrice } from "@/lib/format";
-import { isWebUrl, mainItem } from "@/lib/items";
+import { isShopPath, isWebUrl, mainItem } from "@/lib/items";
 import type { Proposal } from "@/lib/types";
 import { usePollStatus } from "@/lib/usePollStatus";
 import { useReducedMotion } from "@/lib/useReducedMotion";
@@ -39,9 +39,9 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
   if (saved === null) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-10">
-        <h1 className="font-display text-h1 font-semibold text-ink">We couldn&apos;t find this look</h1>
+        <h1 className="font-display text-h1 font-medium text-ink">We couldn&apos;t find this look</h1>
         <p className="text-body text-muted">Saved looks are kept only while this tab is open.</p>
-        <Link href="/" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
+        <Link href="/brief" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
           Start a new brief
         </Link>
       </main>
@@ -62,7 +62,7 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
         >
           Back to editing
         </Link>
-        <h1 className="font-display text-h1 font-semibold text-ink md:text-display">Your {proposal.storeName} look</h1>
+        <h1 className="font-display text-h1 font-medium text-ink md:text-display">Your {proposal.storeName} look</h1>
         <p className="text-small text-muted">Saved for this session.</p>
       </div>
 
@@ -126,7 +126,14 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
                     <p className="text-small font-medium tabular-nums text-ink">{formatPrice(item.price)}</p>
                   </div>
                   <p className="text-small text-muted">{item.size ? `Size ${item.size}` : "One size"}</p>
-                  {isWebUrl(item.productUrl) ? (
+                  {isShopPath(item.productUrl) ? (
+                    <Link
+                      href={item.productUrl}
+                      className="inline-flex min-h-11 items-center self-start text-small font-medium text-sage underline"
+                    >
+                      View in the {proposal.storeName} shop
+                    </Link>
+                  ) : isWebUrl(item.productUrl) ? (
                     <a
                       href={item.productUrl}
                       target="_blank"
@@ -149,7 +156,7 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
             <span className="text-price font-medium tabular-nums text-ink">{formatPrice(proposal.subtotal)}</span>
           </div>
           <Link
-            href="/"
+            href="/brief"
             className="flex min-h-12 items-center justify-center rounded-full bg-sage px-6 text-body font-medium text-on-sage hover:bg-sage-hover"
           >
             Start a new brief

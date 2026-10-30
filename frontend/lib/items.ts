@@ -9,3 +9,6 @@ export const mainItem = (proposal: Proposal): Item | undefined =>
 
 /** Only real web links are shown as product links. */
 export const isWebUrl = (url: string) => /^https?:\/\//i.test(url);
+
+/** A product page inside this site, e.g. "/products/nl_racer_jacket". */
+export const isShopPath = (url: string) => /^\/products\/[\w-]+$/.test(url);

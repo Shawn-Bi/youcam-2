@@ -70,9 +70,9 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
   if (brief === null) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-10">
-        <h1 className="font-display text-h1 font-semibold text-ink">We couldn&apos;t find this brief</h1>
+        <h1 className="font-display text-h1 font-medium text-ink">We couldn&apos;t find this brief</h1>
         <p className="text-body text-muted">Briefs are kept only while this tab is open.</p>
-        <Link href="/" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
+        <Link href="/brief" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
           Post a new brief
         </Link>
       </main>
@@ -86,12 +86,12 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 md:gap-8 md:px-6 md:py-14">
       <div className="flex flex-col gap-3">
-        <h1 className="font-display text-h1 font-semibold text-ink md:text-display">{heading(matches)}</h1>
+        <h1 className="font-display text-h1 font-medium text-ink md:text-display">{heading(matches)}</h1>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <p className="text-small text-muted">
             <span className="text-ink">&ldquo;{input.text}&rdquo;</span> · Budget {formatPrice(input.budget)} · {sizes}
           </p>
-          <Link href="/" className="inline-flex min-h-11 items-center text-small font-medium text-sage underline">
+          <Link href="/brief" className="inline-flex min-h-11 items-center text-small font-medium text-sage underline">
             Edit brief
           </Link>
         </div>

@@ -122,9 +122,9 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
   if (proposal === null) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-10">
-        <h1 className="font-display text-h1 font-semibold text-ink">We couldn&apos;t find this proposal</h1>
+        <h1 className="font-display text-h1 font-medium text-ink">We couldn&apos;t find this proposal</h1>
         <p className="text-body text-muted">Proposals are kept only while this tab is open.</p>
-        <Link href="/" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
+        <Link href="/brief" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
           Post a new brief
         </Link>
       </main>
@@ -142,7 +142,7 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
         <Link href={`/proposals/${briefId}`} className="inline-flex min-h-11 items-center self-start text-small font-medium text-sage underline">
           Back to proposals
         </Link>
-        <h1 className="font-display text-h1 font-semibold text-ink">{proposal.storeName}</h1>
+        <h1 className="font-display text-h1 font-medium text-ink">{proposal.storeName}</h1>
         <p className="text-small text-muted">{proposal.rationale}</p>
       </div>
 
