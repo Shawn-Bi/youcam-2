@@ -57,6 +57,8 @@
   --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-dm-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
 
+  --text-hero: 64px;
+  --text-hero--line-height: 66px;
   --text-display: 48px;
   --text-display--line-height: 52px;
   --text-h1: 32px;
@@ -72,8 +74,9 @@
   --text-price: 18px;
   --text-price--line-height: 24px;
 
-  --radius-field: 6px;
-  --radius-card: 12px;
+  --radius-field: 10px;
+  --radius-card: 20px;
+  --radius-photo: 16px;
 }
 
 body {
