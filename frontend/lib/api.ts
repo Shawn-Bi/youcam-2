@@ -22,7 +22,7 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
     throw new ApiError("We couldn't reach Look Exchange. Check your connection and try again.", true);
   }
   if (res.ok) return res.json() as Promise<T>;
-  const body = await res.json().catch(() => ({}));
+  const body = (await res.json().catch(() => null)) ?? {};
   if (res.status === 422 && body.errors) throw new ValidationError(body.errors);
   if (res.status === 409 && body.code === "out_of_stock") throw new OutOfStockError(body.alternatives ?? []);
   // The backend explains other refusals in plain words ("Select this proposal first.",
