@@ -12,6 +12,8 @@ from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from pydantic import BaseModel, Field
 from PIL import Image, UnidentifiedImageError
+from jobs import Jobs
+jobs = Jobs()
 
 app = FastAPI()
 origins = [x.strip() for x in os.getenv("FRONTEND_ORIGINS", "http://localhost:3000").split(",") if x.strip()]
@@ -140,22 +142,57 @@ def select(pid: str):
     return public(p)
 
 @app.post('/api/proposals/{pid}/previews')
-def start_preview(pid: str, body: dict):
+async def start_preview(pid: str, body: dict):
     clean(); p = proposals.get(pid)
-    if not p or not any(i['itemId'] == body.get('itemId') for i in p['items']): return err(404, 'Proposal or item not found.')
-    return err(503, 'YouCam preview is not configured yet.')
+    if not p: return err(404, 'Proposal not found.')
+    item = next((i for i in p['items'] if i['itemId'] == body.get('itemId')), None)
+    if not item: return err(404, 'Item not found.')
+    if item['category'] not in ('top', 'outer'): return err(422, 'Only clothing previews are currently supported.')
+    if not item['imageUrl'].startswith('https://'): return err(503, 'Product imagery is not configured.')
+    key = os.getenv('YOUCAM_API_KEY')
+    if not key: return err(503, 'YouCam is not configured.')
+    brief = briefs.get(p['briefId'])
+    photo = photos.get(brief['data'].photoId) if brief else None
+    if not photo: return err(410, 'Photo expired. Please upload it again.')
+    for tid, task in previews.items():
+        if task['proposal'] == pid and task['version'] == p['version'] and task['item'] == item['itemId'] and task['status'] in ('queued', 'running', 'success'):
+            return {'previewId':tid}
+    if not await jobs.reserve(brief['data'].photoId, 'preview'): return err(429, 'Generation limit reached for this session or day.')
+    tid = ident()
+    task = dict(created=time.time(), status='queued', kind='preview', proposal=pid, version=p['version'], item=item['itemId'])
+    previews[tid] = task
+    jobs.start(task, key, photo=photo['data'], image_url=item['imageUrl'], category='outer' if item['category'] == 'outer' else 'upper_body')
+    return {'previewId':tid}
 
 @app.get('/api/previews/{preview_id}')
 def get_preview(preview_id: str):
-    clean(); return previews.get(preview_id) or err(404, 'Preview not found.')
+    clean()
+    task = previews.get(preview_id)
+    return jobs.public(task) if task else err(404, 'Preview not found.')
 
 @app.post('/api/proposals/{pid}/videos')
-def start_video(pid: str, body: dict):
+async def start_video(pid: str, body: dict):
     clean(); p = proposals.get(pid)
     if not p: return err(404, 'Proposal not found.')
     if not p['selected']: return err(409, 'Select this proposal first.')
-    return err(503, 'YouCam video is not configured yet.')
+    if body.get('duration') != 5 or body.get('resolution') != '480': return err(422, 'Use a 5-second video at 480p.')
+    preview = previews.get(body.get('previewId', ''))
+    if not preview or preview['proposal'] != pid or preview['version'] != p['version'] or preview['status'] != 'success': return err(409, 'Generate a current preview for this proposal first.')
+    key = os.getenv('YOUCAM_API_KEY')
+    if not key: return err(503, 'YouCam is not configured.')
+    for tid, task in videos.items():
+        if task['proposal'] == pid and task['status'] in ('queued', 'running', 'success'): return {'videoId':tid}
+    brief = briefs.get(p['briefId'])
+    if not brief: return err(410, 'Session expired.')
+    if not await jobs.reserve(brief['data'].photoId, 'video'): return err(429, 'Generation limit reached for this session or day.')
+    tid = ident()
+    task = dict(created=time.time(), status='queued', kind='video', proposal=pid)
+    videos[tid] = task
+    jobs.start(task, key, image_url=preview['imageUrl'])
+    return {'videoId':tid}
 
 @app.get('/api/videos/{video_id}')
 def get_video(video_id: str):
-    clean(); return videos.get(video_id) or err(404, 'Video not found.')
+    clean()
+    task = videos.get(video_id)
+    return jobs.public(task) if task else err(404, 'Video not found.')
