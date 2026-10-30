@@ -15,7 +15,7 @@
 | [后端需求文档 / Backend PRD](docs/backend-prd-zh.md) | 简体中文 | Shawn |
 | [User flow / 用户流程](docs/look-exchange-user-flow.md) | English + 简体中文 | Both |
 
-Concept images / 概念图: [brief](docs/concepts/01-brief.png) · [proposals](docs/concepts/02-proposals.png) · [preview & revise](docs/concepts/03-preview-revise.png)
+Concept images / 概念图: [brief](docs/concepts/01-brief.png) · [proposals](docs/concepts/02-proposals.png) · [preview & revise](docs/concepts/03-preview-revise.png) · [video](docs/concepts/04-video.png) · [earlier drafts](docs/concepts/archive/)
 
 ## About the stores / 关于商店
 
