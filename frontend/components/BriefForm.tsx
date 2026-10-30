@@ -13,8 +13,8 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const PHOTO_TYPES = ["image/jpeg", "image/png"];
 
 const inputClass =
-  "w-full rounded-field border border-line bg-surface px-4 py-3 text-body text-ink placeholder:text-muted";
-const labelClass = "text-body font-medium text-ink";
+  "w-full rounded-field border border-line bg-surface px-5 py-4 text-body text-ink placeholder:text-muted";
+const labelClass = "font-display text-h2 font-medium text-ink";
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
@@ -147,12 +147,14 @@ export function BriefForm() {
     <form
       onSubmit={onSubmit}
       noValidate
-      className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,340px)_minmax(0,1fr)] md:gap-14"
+      className="grid grid-cols-1 gap-8 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:gap-20 xl:gap-24"
     >
-      <div className="flex flex-col gap-3">
+      {/* On wide screens the photo is as tall as the screen allows (and never wider than 42% of it);
+          its column is exactly as wide as the photo. Narrower screens stack it above the form. */}
+      <div className="mx-auto flex w-full max-w-md flex-col gap-3 lg:mx-0 lg:w-min lg:max-w-none">
         <label
           htmlFor={id("photo")}
-          className={`relative flex aspect-[3/4] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-card text-center has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-sage ${
+          className={`relative flex aspect-[3/4] w-full cursor-pointer lg:h-[clamp(416px,min(calc(100svh-19.5rem),42vw),820px)] lg:w-auto lg:self-start flex-col items-center justify-center overflow-hidden rounded-card text-center has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-sage ${
             preview ? "bg-surface" : "border-2 border-dashed border-line bg-surface hover:border-sage"
           }`}
         >
@@ -186,7 +188,7 @@ export function BriefForm() {
         </label>
         <FieldError id={id("photo-error")} message={errors.photo} />
 
-        <label className="flex min-h-11 items-start gap-3 text-small text-ink">
+        <label className="flex min-h-11 items-start gap-3 text-body text-ink">
           <input
             type="checkbox"
             checked={consent}
@@ -202,7 +204,7 @@ export function BriefForm() {
         <FieldError id={id("consent-error")} message={errors.consent} />
       </div>
 
-      <div className="flex flex-col gap-8 md:self-center">
+      <div className="flex max-w-3xl flex-col gap-10 [@media(max-height:820px)]:gap-6">
         <div className="flex flex-col gap-2">
           <label htmlFor={id("text")} className={labelClass}>
             The look you want
@@ -217,10 +219,10 @@ export function BriefForm() {
             }}
             placeholder="Silver-and-black concert look in size S, under $120."
             aria-describedby={`${id("text-hint")}${errors.text ? ` ${id("text-error")}` : ""}`}
-            className={`${inputClass} text-h2 leading-snug md:text-[22px]`}
+            className={`${inputClass} font-display text-h2 leading-snug md:text-[30px] md:leading-[38px]`}
           />
           <FieldError id={id("text-error")} message={errors.text} />
-          <p id={id("text-hint")} className="text-small text-muted" aria-live="polite">
+          <p id={id("text-hint")} className="text-body text-muted" aria-live="polite">
             {picked.length > 0 ? `We'll use: ${picked.join(" · ")}` : "Mention a size, budget or occasion if you like."}
           </p>
         </div>
@@ -279,7 +281,7 @@ export function BriefForm() {
         <button
           type="submit"
           aria-busy={submitting}
-          className="min-h-14 self-start rounded-full bg-sage px-10 text-body font-medium text-on-sage hover:bg-sage-hover"
+          className="min-h-16 self-start rounded-full bg-sage px-12 text-h2 font-medium text-on-sage hover:bg-sage-hover"
         >
           {submitting ? "Getting proposals…" : "Get proposals"}
         </button>
