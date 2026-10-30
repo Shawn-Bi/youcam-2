@@ -99,15 +99,16 @@ export function BriefForm() {
     setSubmitting(true);
     try {
       const { photoId } = await uploadPhoto(photo);
-      const response = await createBrief({
+      const input = {
         photoId,
         text: text.trim(),
         budget: Number(budget),
         occasion: occasion.trim(),
         sizes: bottomSize ? { top: topSize, bottom: bottomSize } : { top: topSize },
         keep,
-      });
-      saveBrief(response);
+      };
+      const response = await createBrief(input);
+      saveBrief(input, response);
       router.push(`/proposals/${response.briefId}`);
     } catch (err) {
       if (err instanceof ValidationError) setErrors(err.fields);

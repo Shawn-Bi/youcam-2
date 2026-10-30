@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { loadBrief } from "@/lib/briefStore";
-import type { BriefResponse } from "@/lib/types";
+import { loadBrief, type StoredBrief } from "@/lib/briefStore";
 
 // Placeholder until the proposals screen (task F4) is built.
 export default function ProposalsPage({ params }: { params: Promise<{ briefId: string }> }) {
   const { briefId } = use(params);
-  const [brief, setBrief] = useState<BriefResponse | null | undefined>(undefined);
+  const [brief, setBrief] = useState<StoredBrief | null | undefined>(undefined);
 
   useEffect(() => {
     setBrief(loadBrief(briefId));
@@ -28,7 +27,7 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
       )}
       {brief && (
         <ul className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {brief.proposals.map((p) => (
+          {brief.response.proposals.map((p) => (
             <li key={p.id} className="rounded-card border border-line bg-surface p-6">
               <h2 className="font-display text-h2 font-medium text-ink">{p.storeName}</h2>
               <p className="mt-2 text-small text-muted">{p.rationale}</p>

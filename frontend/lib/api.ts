@@ -1,5 +1,5 @@
-import { mockBriefResponse } from "@/mocks/data";
-import type { BriefInput, BriefResponse, FieldErrors } from "./types";
+import { mockBriefResponse, mockSelect } from "@/mocks/data";
+import type { BriefInput, BriefResponse, FieldErrors, Proposal } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
@@ -47,11 +47,19 @@ export async function uploadPhoto(photo: File): Promise<{ photoId: string }> {
 export async function createBrief(input: BriefInput): Promise<BriefResponse> {
   if (USE_MOCKS) {
     await delay(900);
-    return mockBriefResponse;
+    return mockBriefResponse(input);
   }
   return request("/api/briefs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
+}
+
+export async function selectProposal(proposal: Proposal): Promise<Proposal> {
+  if (USE_MOCKS) {
+    await delay(300);
+    return mockSelect(proposal);
+  }
+  return request(`/api/proposals/${encodeURIComponent(proposal.id)}/select`, { method: "POST" });
 }
