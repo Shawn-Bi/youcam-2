@@ -6,8 +6,7 @@
 
 ## Potential PRD / 候选产品需求简述
 
-- [English — Look Exchange](docs/look-exchange-potential-prd.en.md)
-- [简体中文 — Look Exchange](docs/look-exchange-potential-prd.zh-CN.md)
+- [Look Exchange — English + 简体中文](docs/look-exchange-potential-prd.md)
 
 Current scope: concept documentation only. API access, integration quality, and FitFindr reuse permissions still need verification before implementation.
 
