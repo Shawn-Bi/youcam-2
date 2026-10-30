@@ -96,6 +96,26 @@ export async function startPreview(proposal: Proposal, itemId: string): Promise<
   return request(`${proposalPath(proposal.id)}/previews`, { method: "POST", ...json({ itemId }) });
 }
 
+/** Turn a finished try-on preview into a 5-second video (YouCam image-to-video, 480p). */
+export async function startVideo(proposal: Proposal, previewId: string): Promise<{ videoId: string }> {
+  if (USE_MOCKS) {
+    await delay(300);
+    return mock.mockStartVideo(previewId);
+  }
+  return request(`${proposalPath(proposal.id)}/videos`, {
+    method: "POST",
+    ...json({ previewId, duration: 5, resolution: "480" }),
+  });
+}
+
+export async function getVideo(videoId: string): Promise<TaskResult> {
+  if (USE_MOCKS) {
+    await delay(150);
+    return mock.mockGetVideo(videoId);
+  }
+  return request(`/api/videos/${encodeURIComponent(videoId)}`, { method: "GET" });
+}
+
 export async function getPreview(previewId: string): Promise<TaskResult> {
   if (USE_MOCKS) {
     await delay(150);

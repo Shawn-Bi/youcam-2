@@ -130,6 +130,63 @@ export function mockGetPreview(previewId: string): TaskResult {
   return { status: "success", imageUrl: mockPhotoUrl ?? "" };
 }
 
+// --- Video ------------------------------------------------------------------------
+// The mock video is a real 5-second clip recorded in the browser: a slow zoom on the
+// shopper's photo. Recording takes about as long as YouCam does, so the progress state is realistic.
+const videoTasks = new Map<string, { promise: Promise<string> | null; result: TaskResult }>();
+
+function recordZoomClip(imageUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error("image"));
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 480;
+      canvas.height = 640;
+      const ctx = canvas.getContext("2d");
+      if (!ctx || typeof MediaRecorder === "undefined") return reject(new Error("unsupported"));
+      const recorder = new MediaRecorder(canvas.captureStream(30), { mimeType: "video/webm" });
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = () => resolve(URL.createObjectURL(new Blob(chunks, { type: "video/webm" })));
+      const start = performance.now();
+      const draw = () => {
+        const t = Math.min((performance.now() - start) / 5000, 1);
+        const scale = 1 + 0.12 * t;
+        const cover = Math.max(canvas.width / img.width, canvas.height / img.height) * scale;
+        const w = img.width * cover;
+        const h = img.height * cover;
+        ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2 - 20 * t, w, h);
+        if (t < 1) requestAnimationFrame(draw);
+        else recorder.stop();
+      };
+      recorder.start();
+      draw();
+    };
+    img.src = imageUrl;
+  });
+}
+
+export function mockStartVideo(previewId: string): { videoId: string } {
+  const videoId = `video_${previewId}_${Date.now().toString(36)}`;
+  const task: { promise: Promise<string> | null; result: TaskResult } = { promise: null, result: { status: "running" } };
+  if (!mockPhotoUrl) {
+    task.result = { status: "failed", error: "Add your photo again to make a video." };
+  } else {
+    task.promise = recordZoomClip(mockPhotoUrl);
+    task.promise.then(
+      (videoUrl) => (task.result = { status: "success", videoUrl }),
+      () => (task.result = { status: "failed", error: "The video service couldn't finish this clip. Try again." }),
+    );
+  }
+  videoTasks.set(videoId, task);
+  return { videoId };
+}
+
+export function mockGetVideo(videoId: string): TaskResult {
+  return videoTasks.get(videoId)?.result ?? { status: "failed", error: "We lost track of this video. Try again." };
+}
+
 // --- Revising a proposal ---------------------------------------------------------
 const alternatives: Record<string, Item[]> = {
   northline: [

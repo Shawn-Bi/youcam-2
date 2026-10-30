@@ -47,6 +47,26 @@ export function savePreviews(proposalId: string, previews: Record<string, string
   }
 }
 
+// The video task id per proposal, for the same reason as previews.
+const VIDEOS_KEY = "look-exchange:videos";
+
+export function loadVideo(proposalId: string): string | null {
+  try {
+    return JSON.parse(sessionStorage.getItem(VIDEOS_KEY) ?? "{}")[proposalId] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveVideo(proposalId: string, videoId: string) {
+  try {
+    const all = JSON.parse(sessionStorage.getItem(VIDEOS_KEY) ?? "{}");
+    sessionStorage.setItem(VIDEOS_KEY, JSON.stringify({ ...all, [proposalId]: videoId }));
+  } catch {
+    // The video still plays for this visit.
+  }
+}
+
 /** The most recent brief in this tab, used to refill the form when the shopper edits it. */
 export function loadLatestBrief(): StoredBrief | null {
   try {
