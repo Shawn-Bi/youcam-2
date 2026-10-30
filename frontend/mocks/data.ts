@@ -38,7 +38,7 @@ const plansFor = (key: string): Plan[] => [
   },
 ];
 
-// No size in the brief: any piece fits, and the shopper chooses a size on the proposal page.
+// Bottoms use the bottoms size when given, otherwise the top size.
 const sizeFor = (item: CatalogItem, input: BriefInput): string | null =>
   (item.category === "bottom" ? (input.sizes?.bottom ?? input.sizes?.top) : input.sizes?.top) ?? null;
 const fits = (item: CatalogItem, input: BriefInput) => {

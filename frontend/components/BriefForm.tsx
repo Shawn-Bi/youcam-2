@@ -5,16 +5,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ApiError, ValidationError, createBrief, uploadPhoto } from "@/lib/api";
 import { loadLatestBrief, saveBrief } from "@/lib/briefStore";
 import { SIZES, getCatalogItem, getStore } from "@/lib/catalog";
-import { formatPrice } from "@/lib/format";
 import { parseBrief } from "@/lib/parseBrief";
 import type { BriefInput, FieldErrors } from "@/lib/types";
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+// Fields with their own error line; any other field error from the API shows above the button.
+const SHOWN_FIELDS = ["photo", "consent", "text", "budget", "topSize"];
 const PHOTO_TYPES = ["image/jpeg", "image/png"];
 
 const inputClass =
   "w-full rounded-field border border-line bg-surface px-5 py-4 text-body text-ink placeholder:text-muted";
-const labelClass = "font-display text-h2 font-medium text-ink";
+// Short screens (laptops) get one step smaller text so the whole brief fits without scrolling.
+// Tailwind only builds classes written out in full, so the short-screen variants are spelled out.
+const labelClass =
+  "font-display text-h2 font-medium text-ink [@media(max-height:820px)]:text-[22px] [@media(max-height:820px)]:leading-7";
+const smallLabel = "text-body font-medium text-ink";
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
@@ -25,7 +30,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-/** The style brief: a full-body photo on the left, one sentence about the look on the right. */
+/** The style brief: a full-body photo on the left; the look, budget and sizes on the right. */
 export function BriefForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,6 +39,12 @@ export function BriefForm() {
   const [preview, setPreview] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
   const [text, setText] = useState("");
+  const [budget, setBudget] = useState("");
+  const [topSize, setTopSize] = useState("");
+  const [bottomSize, setBottomSize] = useState("");
+  // Once the shopper sets a field by hand, the sentence stops filling it in.
+  const [budgetSetByHand, setBudgetSetByHand] = useState(false);
+  const [sizeSetByHand, setSizeSetByHand] = useState(false);
   const [keepDraft, setKeepDraft] = useState("");
   const [keep, setKeep] = useState<string[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -50,6 +61,10 @@ export function BriefForm() {
     setStoredPhotoId(input.photoId);
     setConsent(true);
     setText(input.text);
+    // Tolerate briefs saved by an older version of this form.
+    setBudget(input.budget ? String(input.budget) : "");
+    setTopSize(input.sizes?.top ?? "");
+    setBottomSize(input.sizes?.bottom ?? "");
     setKeep(input.keep);
   }, []);
 
@@ -59,8 +74,11 @@ export function BriefForm() {
     if (!item) return;
     const store = getStore(item.storeId);
     const size = searchParams.get("size");
-    const sized = size && SIZES.includes(size) && item.sizesInStock.length > 0 ? ` in size ${size}` : "";
-    setText(`Build a look around the ${item.name} from ${store?.name ?? "the store"}${sized}.`);
+    setText(`Build a look around the ${item.name} from ${store?.name ?? "the store"}.`);
+    if (size && SIZES.includes(size)) {
+      if (item.category === "bottom") setBottomSize(size);
+      else if (item.category !== "bag") setTopSize(size);
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -73,7 +91,20 @@ export function BriefForm() {
     return () => URL.revokeObjectURL(url);
   }, [photo]);
 
-  const details = parseBrief(text);
+  // A size or budget mentioned in the sentence fills in its field, until the shopper edits that field.
+  function onTextChange(value: string) {
+    setText(value);
+    clearError("text");
+    const details = parseBrief(value);
+    if (details.budget && !budgetSetByHand) {
+      setBudget(String(details.budget));
+      clearError("budget");
+    }
+    if (details.size && !sizeSetByHand) {
+      setTopSize(details.size);
+      clearError("topSize");
+    }
+  }
 
   const clearError = (field: string) =>
     setErrors((prev) => {
@@ -108,6 +139,9 @@ export function BriefForm() {
     if (!photo && !storedPhotoId) found.photo = "Add a full-body photo of yourself.";
     if (!consent) found.consent = "Agree to send your photo for try-on to continue.";
     if (!text.trim()) found.text = "Describe the look you want.";
+    const amount = Number(budget);
+    if (!budget || !Number.isFinite(amount) || amount <= 0) found.budget = "Enter a budget in dollars.";
+    if (!topSize) found.topSize = "Choose your top or jacket size.";
     return found;
   }
 
@@ -124,15 +158,22 @@ export function BriefForm() {
       const input: BriefInput = {
         photoId,
         text: text.trim(),
-        ...(details.budget ? { budget: details.budget } : {}),
-        ...(details.size ? { sizes: { top: details.size } } : {}),
+        budget: Number(budget),
+        sizes: bottomSize ? { top: topSize, bottom: bottomSize } : { top: topSize },
         keep,
       };
       const response = await createBrief(input);
       saveBrief(input, response);
       router.push(`/proposals/${response.briefId}`);
     } catch (err) {
-      if (err instanceof ValidationError) setErrors(err.fields);
+      if (err instanceof ValidationError) {
+        setErrors(err.fields);
+        // The earlier photo expired on the server: ask for a new one instead of claiming we still have it.
+        if (err.fields.photo && !photo) setStoredPhotoId(null);
+        // A field this form doesn't show must still reach the shopper.
+        const unshown = Object.entries(err.fields).filter(([field]) => !SHOWN_FIELDS.includes(field));
+        if (unshown.length > 0) setFormError(unshown.map(([, message]) => message).join(" "));
+      }
       else if (err instanceof ApiError) setFormError(err.message);
       else setFormError("Something went wrong. Try again.");
       setSubmitting(false);
@@ -141,7 +182,6 @@ export function BriefForm() {
 
   const id = (name: string) => `${uid}-${name}`;
   const describedBy = (name: string) => (errors[name] ? id(`${name}-error`) : undefined);
-  const picked = [details.size && `Size ${details.size}`, details.budget && `Up to ${formatPrice(details.budget)}`].filter(Boolean);
 
   return (
     <form
@@ -204,27 +244,85 @@ export function BriefForm() {
         <FieldError id={id("consent-error")} message={errors.consent} />
       </div>
 
-      <div className="flex max-w-3xl flex-col gap-10 [@media(max-height:820px)]:gap-6">
+      <div className="flex max-w-3xl flex-col gap-8 [@media(max-height:820px)]:gap-4">
         <div className="flex flex-col gap-2">
           <label htmlFor={id("text")} className={labelClass}>
             The look you want
           </label>
           <textarea
             id={id("text")}
-            rows={3}
+            rows={2}
             value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              clearError("text");
-            }}
+            onChange={(e) => onTextChange(e.target.value)}
             placeholder="Silver-and-black concert look in size S, under $120."
             aria-describedby={`${id("text-hint")}${errors.text ? ` ${id("text-error")}` : ""}`}
-            className={`${inputClass} font-display text-h2 leading-snug md:text-[30px] md:leading-[38px]`}
+            className={`${inputClass} font-display text-h2 leading-snug md:text-[30px] md:leading-[38px] [@media(max-height:820px)]:md:text-[22px] [@media(max-height:820px)]:md:leading-7`}
           />
           <FieldError id={id("text-error")} message={errors.text} />
-          <p id={id("text-hint")} className="text-body text-muted" aria-live="polite">
-            {picked.length > 0 ? `We'll use: ${picked.join(" · ")}` : "Mention a size, budget or occasion if you like."}
+          <p id={id("text-hint")} className="text-small text-muted">
+            Mention a size or budget and it fills in below.
           </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="flex flex-col gap-2">
+            <label htmlFor={id("budget")} className={smallLabel}>
+              Budget (USD)
+            </label>
+            <input
+              id={id("budget")}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={budget}
+              onChange={(e) => {
+                setBudget(e.target.value);
+                setBudgetSetByHand(true);
+                clearError("budget");
+              }}
+              placeholder="120"
+              aria-describedby={describedBy("budget")}
+              className={inputClass}
+            />
+            <FieldError id={id("budget-error")} message={errors.budget} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor={id("topSize")} className={smallLabel}>
+              Top or jacket size
+            </label>
+            <select
+              id={id("topSize")}
+              value={topSize}
+              onChange={(e) => {
+                setTopSize(e.target.value);
+                setSizeSetByHand(true);
+                clearError("topSize");
+              }}
+              aria-describedby={describedBy("topSize")}
+              className={inputClass}
+            >
+              <option value="">Choose</option>
+              {SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <FieldError id={id("topSize-error")} message={errors.topSize} />
+          </div>
+          <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
+            <label htmlFor={id("bottomSize")} className={smallLabel}>
+              Bottoms size <span className="font-normal text-muted">(optional)</span>
+            </label>
+            <select id={id("bottomSize")} value={bottomSize} onChange={(e) => setBottomSize(e.target.value)} className={inputClass}>
+              <option value="">No bottoms</option>
+              {SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -281,7 +379,7 @@ export function BriefForm() {
         <button
           type="submit"
           aria-busy={submitting}
-          className="min-h-16 self-start rounded-full bg-sage px-12 text-h2 font-medium text-on-sage hover:bg-sage-hover"
+          className="min-h-16 self-start rounded-full bg-sage px-12 text-h2 font-medium text-on-sage hover:bg-sage-hover [@media(max-height:820px)]:min-h-12 [@media(max-height:820px)]:text-body"
         >
           {submitting ? "Getting proposals…" : "Get proposals"}
         </button>

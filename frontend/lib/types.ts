@@ -29,16 +29,11 @@ export type Proposal = {
   selected: boolean;
 };
 
-/**
- * The shopper writes one sentence; budget and size are read from it when mentioned.
- * Without a budget there is no price cap; without a size, items come back with
- * `size: null` and the shopper picks one on the proposal page.
- */
 export type BriefInput = {
   photoId: string;
   text: string;
-  budget?: number;
-  sizes?: { top?: string; bottom?: string };
+  budget: number;
+  sizes: { top: string; bottom?: string };
   keep: string[];
 };
 

@@ -1,5 +1,5 @@
-// Reads a size and a budget out of the shopper's own sentence, so the brief
-// needs no separate fields: "Silver-and-black concert look in size S, under $120."
+// Reads a size and a budget out of the shopper's own sentence to fill in the brief's
+// budget and size fields: "Silver-and-black concert look in size S, under $120."
 
 const SIZE_WORDS: Record<string, string> = {
   "extra small": "XS",
