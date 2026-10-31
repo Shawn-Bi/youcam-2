@@ -1,6 +1,8 @@
 # Demo run
 
-Material from the first full run on the live site (2026-10-31), for an example page and the demo video.
+Material from the first full run on the live site (2026-10-31), for the `/example` page and the demo video.
+
+The three files now live in `frontend/public/demo/`, where the `/example` page loads them (`frontend/lib/example.ts` holds the brief and the four answers).
 
 | File | What it is |
 | --- | --- |

@@ -21,12 +21,13 @@ export const sizeLabel = (item: Item) =>
 
 type Props = {
   proposal: Proposal;
-  busy: boolean;
-  onPreview: () => void;
-  onPick: () => void;
+  busy?: boolean;
+  /** Both actions are left out on the example page, which only shows the answer. */
+  onPreview?: () => void;
+  onPick?: () => void;
 };
 
-export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
+export function ProposalCard({ proposal, busy = false, onPreview, onPick }: Props) {
   const headingId = `store-${proposal.id}`;
   const hero = mainItem(proposal);
   return (
@@ -64,19 +65,21 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
           <span className="text-small text-muted">Subtotal</span>
           <span className="font-display text-h2 text-ink tabular-nums">{formatPrice(proposal.subtotal)}</span>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={onPreview}
-            disabled={busy}
-            className={`${button} border border-sage text-sage hover:bg-sage-tint hover:text-sage-hover`}
-          >
-            Preview on me
-          </button>
-          <button type="button" onClick={onPick} disabled={busy} className={`${button} bg-sage text-on-sage hover:bg-sage-hover`}>
-            {busy ? "Picking…" : needsSize(proposal) ? "Choose sizes" : "Pick this store"}
-          </button>
-        </div>
+        {onPreview && onPick && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={onPreview}
+              disabled={busy}
+              className={`${button} border border-sage text-sage hover:bg-sage-tint hover:text-sage-hover`}
+            >
+              Preview on me
+            </button>
+            <button type="button" onClick={onPick} disabled={busy} className={`${button} bg-sage text-on-sage hover:bg-sage-hover`}>
+              {busy ? "Picking…" : needsSize(proposal) ? "Choose sizes" : "Pick this store"}
+            </button>
+          </div>
+        )}
       </div>
     </article>
   );

@@ -22,16 +22,26 @@ export function FrameLabel({ children, ai = false }: { children: React.ReactNode
 type Props = {
   item: Item;
   previewId: string | null;
-  onStart: () => void;
-  starting: boolean;
+  onStart?: () => void;
+  starting?: boolean;
+  /** A finished try-on to show as it is; the example page uses this and never asks the backend. */
+  finished?: { imageUrl: string; alt: string };
 };
 
 /** The selected item's try-on preview beside its product photo. */
-export function TryOnViewer({ item, previewId, onStart, starting }: Props) {
+export function TryOnViewer({ item, previewId, onStart, starting, finished }: Props) {
   const state = usePollStatus(previewId, getPreview, { timeoutMs: PREVIEW_TIMEOUT_MS });
 
   let tryOn: React.ReactNode;
-  if (!previewId) {
+  if (finished) {
+    tryOn = (
+      <>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={finished.imageUrl} alt={finished.alt} className="size-full object-cover" />
+        <FrameLabel ai>AI-generated preview</FrameLabel>
+      </>
+    );
+  } else if (!previewId) {
     tryOn = (
       <div className="flex flex-col items-center gap-3 px-6 text-center">
         <p className="text-body text-ink">See the {item.name.toLowerCase()} on your photo.</p>

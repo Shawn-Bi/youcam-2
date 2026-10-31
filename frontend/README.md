@@ -32,10 +32,13 @@ Production settings live in the Vercel project, not in a file: `NEXT_PUBLIC_API_
 
 ## Layout
 
-- `app/` — routes: `/` (home), `/shop`, `/stores`, `/stores/[storeId]`, `/products/[itemId]`, `/brief`, `/proposals/[briefId]` (all four stores' proposals), `/proposals/[briefId]/[proposalId]` (try-on, edit, pick, video), `/saved/[briefId]/[proposalId]`; favicon `icon.svg`
+- `app/` — routes: `/` (home), `/shop`, `/stores`, `/stores/[storeId]`, `/products/[itemId]`, `/brief`, `/example` (a replay of the first live run: no photo, no API calls), `/proposals/[briefId]` (all four stores' proposals), `/proposals/[briefId]/[proposalId]` (try-on, edit, pick, video), `/saved/[briefId]/[proposalId]`; favicon `icon.svg`
 - `components/` — shop (`ProductCard`, `StoreCard`, `ShopBrowser`, `ProductActions`), brief (`BriefForm`), proposals (`ProposalCard`, `ItemRow`, `TryOnViewer`, `VideoPanel`), `Header`, `ProductImage`
 - `data/catalog.json` — the shared catalog: four sample stores, 48 products; photos in `public/catalog/`
-- `lib/` — `types.ts` (shared API contract), `api.ts` (backend calls + mock switch), `catalog.ts`, `parseBrief.ts` (fills budget and size from the brief sentence), `briefStore.ts` (session storage), `usePollStatus.ts`, `items.ts`, `format.ts`, `errors.ts`
+- `public/demo/` — the shopper photo, try-on and video from the first live run, shown by `/example` (see `docs/demo/README.md`)
+- `lib/` — `types.ts` (shared API contract), `api.ts` (backend calls + mock switch), `catalog.ts`, `example.ts` (the brief and the four answers that `/example` replays), `parseBrief.ts` (fills budget and size from the brief sentence), `briefStore.ts` (session storage), `usePollStatus.ts`, `items.ts`, `format.ts`, `errors.ts`
+
+`/example` reuses `ProposalCard`, `TryOnViewer` and `VideoPanel`: they take a finished result (`finished`) or no actions, so they show a stored run and never ask the backend.
 - `mocks/` — mock responses matching the contract
 
 Colors and type are theme tokens in `app/globals.css`; use the token classes (`bg-stone`, `text-ink`, `bg-sage`), never raw hex values.
