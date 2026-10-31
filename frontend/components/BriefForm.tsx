@@ -47,6 +47,7 @@ export function BriefForm() {
   const [sizeSetByHand, setSizeSetByHand] = useState(false);
   const [keepDraft, setKeepDraft] = useState("");
   const [keep, setKeep] = useState<string[]>([]);
+  const [itemId, setItemId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -69,6 +70,7 @@ export function BriefForm() {
     setBudgetSetByHand(Boolean(input.budget));
     setSizeSetByHand(Boolean(input.sizes?.top));
     setKeep(input.keep);
+    setItemId(input.itemId ?? null);
   }, []);
 
   // Coming from a product page: start the brief around that piece and size.
@@ -78,6 +80,7 @@ export function BriefForm() {
     const store = getStore(item.storeId);
     const size = searchParams.get("size");
     setText(`Build a look around the ${item.name} from ${store?.name ?? "the store"}.`);
+    setItemId(item.itemId);
     if (size && SIZES.includes(size)) {
       if (item.category === "bottom") setBottomSize(size);
       else if (item.category !== "bag") {
@@ -162,12 +165,16 @@ export function BriefForm() {
     setSubmitting(true);
     try {
       const photoId = photo ? (await uploadPhoto(photo)).photoId : storedPhotoId!;
+      // Send the piece only while the sentence still names it, so a rewritten brief isn't tied to it.
+      const piece = itemId ? getCatalogItem(itemId) : undefined;
+      const named = piece && text.toLowerCase().includes(piece.name.toLowerCase()) ? piece.itemId : undefined;
       const input: BriefInput = {
         photoId,
         text: text.trim(),
         budget: Number(budget),
         sizes: bottomSize ? { top: topSize, bottom: bottomSize } : { top: topSize },
         keep,
+        ...(named && { itemId: named }),
       };
       const response = await createBrief(input);
       saveBrief(input, response);

@@ -53,7 +53,7 @@ const slot = (item: CatalogItem) => (item.category === "top" ? "outer" : item.ca
 const namedPiece = (text: string) => catalogItems.find((i) => text.toLowerCase().includes(i.name.toLowerCase()));
 
 function buildProposal(plan: Plan, input: BriefInput): Proposal {
-  const named = namedPiece(input.text);
+  const named = (input.itemId && getCatalogItem(input.itemId)) || namedPiece(input.text);
   const wanted = named?.storeId === plan.storeId && fits(named, input) ? named : undefined;
   // Like the backend, never offer a size the shopper didn't ask for: swap in a
   // same-category piece from this store that has it, or leave the piece out.

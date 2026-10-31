@@ -35,6 +35,8 @@ export type BriefInput = {
   budget: number;
   sizes: { top: string; bottom?: string };
   keep: string[];
+  /** A catalog piece every store's outfit is built around, when the brief started on its product page. */
+  itemId?: string;
 };
 
 export type BriefResponse = {
