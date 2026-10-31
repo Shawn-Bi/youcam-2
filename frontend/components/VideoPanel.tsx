@@ -124,7 +124,7 @@ export function VideoPanel({ proposal, previewId, itemName, finished }: Props) {
   return (
     <section aria-labelledby="video-heading" className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 md:p-6">
       <h2 id="video-heading" className="font-display text-h2 font-medium text-ink">
-        Video of your look
+        {finished ? "Video of this look" : "Video of your look"}
       </h2>
       {error && (
         <p role="alert" className="text-small text-danger">
