@@ -7,5 +7,12 @@ export const isApparel = (item: Item) => item.category !== "bag";
 export const mainItem = (proposal: Proposal): Item | undefined =>
   proposal.items.find(isApparel) ?? proposal.items[0];
 
+/** Clothing still waiting for the shopper to choose a size (the brief didn't mention one). */
+export const needsSize = (proposal: Proposal) =>
+  proposal.items.some((i) => i.sizesInStock.length > 0 && !i.size);
+
 /** Only real web links are shown as product links. */
 export const isWebUrl = (url: string) => /^https?:\/\//i.test(url);
+
+/** A product page inside this site, e.g. "/products/nl_racer_jacket". */
+export const isShopPath = (url: string) => /^\/products\/[\w-]+$/.test(url);

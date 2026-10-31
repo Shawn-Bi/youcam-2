@@ -8,7 +8,7 @@ import { ProductImage } from "./ProductImage";
 const PREVIEW_TIMEOUT_MS = 90_000;
 
 const outlineButton =
-  "min-h-11 rounded-full border border-sage px-6 text-small font-medium text-sage hover:bg-sage-tint";
+  "min-h-11 rounded-full border border-sage px-6 text-small font-medium text-sage hover:bg-sage-tint hover:text-sage-hover";
 
 export function FrameLabel({ children, ai = false }: { children: React.ReactNode; ai?: boolean }) {
   return (

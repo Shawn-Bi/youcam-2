@@ -33,7 +33,6 @@ export type BriefInput = {
   photoId: string;
   text: string;
   budget: number;
-  occasion: string;
   sizes: { top: string; bottom?: string };
   keep: string[];
 };

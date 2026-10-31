@@ -8,7 +8,7 @@ import { VideoPanel } from "@/components/VideoPanel";
 import { ApiError, OutOfStockError, replaceItem, selectProposal, startPreview, updateItem } from "@/lib/api";
 import { loadBrief, loadPreviews, savePreviews, saveProposal } from "@/lib/briefStore";
 import { formatPrice } from "@/lib/format";
-import { mainItem } from "@/lib/items";
+import { mainItem, needsSize } from "@/lib/items";
 import type { Item, Proposal } from "@/lib/types";
 
 
@@ -33,7 +33,7 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
     setProposal(found);
     if (!stored || !found) return;
     document.title = `${found.storeName} · Look Exchange`;
-    setBudget(stored.input.budget);
+    setBudget(stored.input.budget ?? 0);
     const first = mainItem(found);
     setViewingId(first?.itemId ?? null);
     const saved = loadPreviews(found.id);
@@ -111,20 +111,24 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
 
   async function pick() {
     if (!proposal) return;
+    if (needsSize(proposal)) {
+      setError("Choose a size for each piece first.");
+      return;
+    }
     const next = await run(() => selectProposal(proposal), "We couldn't pick this store. Try again.");
     if (next) commit(next);
   }
 
   if (proposal === undefined) {
-    return <main className="mx-auto max-w-6xl px-4 py-10 md:px-6" aria-busy="true" />;
+    return <main className="mx-auto max-w-page px-4 py-10 md:px-8 lg:px-12" aria-busy="true" />;
   }
 
   if (proposal === null) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-10">
-        <h1 className="font-display text-h1 font-semibold text-ink">We couldn&apos;t find this proposal</h1>
+        <h1 className="font-display text-h1 font-medium text-ink">We couldn&apos;t find this proposal</h1>
         <p className="text-body text-muted">Proposals are kept only while this tab is open.</p>
-        <Link href="/" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
+        <Link href="/brief" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
           Post a new brief
         </Link>
       </main>
@@ -137,12 +141,12 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
   const videoItem = mainItem(proposal);
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 md:px-6 md:py-12">
+    <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-8 md:px-8 lg:px-12 md:py-12">
       <div className="flex flex-col gap-1">
         <Link href={`/proposals/${briefId}`} className="inline-flex min-h-11 items-center self-start text-small font-medium text-sage underline">
           Back to proposals
         </Link>
-        <h1 className="font-display text-h1 font-semibold text-ink">{proposal.storeName}</h1>
+        <h1 className="font-display text-h1 font-medium text-ink">{proposal.storeName}</h1>
         <p className="text-small text-muted">{proposal.rationale}</p>
       </div>
 

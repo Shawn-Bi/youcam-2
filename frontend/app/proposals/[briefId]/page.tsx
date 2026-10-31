@@ -6,7 +6,10 @@ import { use, useEffect, useState } from "react";
 import { NoMatchCard, ProposalCard } from "@/components/ProposalCard";
 import { ApiError, createBrief, selectProposal } from "@/lib/api";
 import { loadBrief, saveBrief, saveProposal, type StoredBrief } from "@/lib/briefStore";
-import { formatPrice, raisedBudget } from "@/lib/format";
+import { stores } from "@/lib/catalog";
+import { raisedBudget } from "@/lib/format";
+import { needsSize } from "@/lib/items";
+import { replaceBudget } from "@/lib/parseBrief";
 import type { Proposal } from "@/lib/types";
 
 function heading(matches: number) {
@@ -41,11 +44,14 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
   }
 
   async function raiseBudget(proposal: Proposal) {
-    if (!brief) return;
+    if (!brief?.input.budget) return;
     setError(null);
     setBusyId(proposal.id);
     try {
-      const input = { ...brief.input, budget: raisedBudget(brief.input.budget) };
+      const { budget } = brief.input;
+      const next = raisedBudget(budget);
+      // Keep the sentence in step with the raised budget when it mentions an amount.
+      const input = { ...brief.input, budget: next, text: replaceBudget(brief.input.text, budget, next) };
       const response = await createBrief(input);
       saveBrief(input, response);
       router.replace(`/proposals/${response.briefId}`);
@@ -57,11 +63,12 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
 
   if (brief === undefined) {
     return (
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 md:px-6" aria-busy="true">
+      <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-10 md:px-8 lg:px-12" aria-busy="true">
         <div className="h-10 w-2/3 rounded-field bg-sage-tint" />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="h-96 rounded-card border border-line bg-surface" />
-          <div className="h-96 rounded-card border border-line bg-surface" />
+          {stores.map((s) => (
+            <div key={s.storeId} className="h-96 rounded-card border border-line bg-surface" />
+          ))}
         </div>
       </main>
     );
@@ -70,9 +77,9 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
   if (brief === null) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-10">
-        <h1 className="font-display text-h1 font-semibold text-ink">We couldn&apos;t find this brief</h1>
+        <h1 className="font-display text-h1 font-medium text-ink">We couldn&apos;t find this brief</h1>
         <p className="text-body text-muted">Briefs are kept only while this tab is open.</p>
-        <Link href="/" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
+        <Link href="/brief" className="self-start rounded-full bg-sage px-6 py-3 text-body font-medium text-on-sage hover:bg-sage-hover">
           Post a new brief
         </Link>
       </main>
@@ -81,21 +88,29 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
 
   const { input, response } = brief;
   const matches = response.proposals.filter((p) => p.items.length > 0).length;
-  const sizes = input.sizes.bottom ? `Top ${input.sizes.top}, bottoms ${input.sizes.bottom}` : `Top ${input.sizes.top}`;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 md:gap-8 md:px-6 md:py-14">
-      <div className="flex flex-col gap-3">
-        <h1 className="font-display text-h1 font-semibold text-ink md:text-display">{heading(matches)}</h1>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <p className="text-small text-muted">
-            <span className="text-ink">&ldquo;{input.text}&rdquo;</span> · Budget {formatPrice(input.budget)} · {sizes}
-          </p>
-          <Link href="/" className="inline-flex min-h-11 items-center text-small font-medium text-sage underline">
-            Edit brief
-          </Link>
+    <main className="mx-auto flex max-w-page flex-col gap-6 px-4 py-10 md:gap-8 md:px-8 lg:px-12 md:py-14">
+      {/* The proposals speak for themselves; the count is for screen readers. */}
+      <h1 className="sr-only">{heading(matches)}</h1>
+      <section
+        aria-labelledby="your-brief"
+        className="flex flex-col gap-4 rounded-card bg-surface p-5 md:flex-row md:items-center md:justify-between md:gap-8 md:p-7"
+      >
+        <div className="flex flex-col gap-2">
+          <h2 id="your-brief" className="text-label font-medium tracking-[0.2em] text-terracotta-text uppercase">
+            Your brief
+          </h2>
+          <p className="font-display text-h2 text-ink md:text-h1">&ldquo;{input.text}&rdquo;</p>
+          {input.keep.length > 0 && <p className="text-small text-muted">Keeping: {input.keep.join(", ")}</p>}
         </div>
-      </div>
+        <Link
+          href="/brief"
+          className="flex min-h-12 shrink-0 items-center justify-center self-start rounded-full border border-sage px-7 text-body font-medium text-sage hover:bg-sage-tint hover:text-sage-hover md:self-center"
+        >
+          Edit brief
+        </Link>
+      </section>
 
       {error && (
         <p role="alert" className="rounded-field border border-danger/40 bg-surface px-4 py-3 text-small text-danger">
@@ -111,14 +126,14 @@ export default function ProposalsPage({ params }: { params: Promise<{ briefId: s
               proposal={p}
               busy={busyId !== null}
               onPreview={() => router.push(`/proposals/${briefId}/${p.id}?preview=1`)}
-              onPick={() => pick(p)}
+              onPick={() => (needsSize(p) ? router.push(`/proposals/${briefId}/${p.id}`) : pick(p))}
             />
           ) : (
             <NoMatchCard
               key={p.id}
               proposal={p}
               budget={input.budget}
-              nextBudget={raisedBudget(input.budget)}
+              nextBudget={input.budget ? raisedBudget(input.budget) : undefined}
               busy={busyId !== null}
               onRaiseBudget={() => raiseBudget(p)}
             />

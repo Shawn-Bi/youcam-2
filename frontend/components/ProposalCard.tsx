@@ -1,11 +1,23 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
-import type { Proposal } from "@/lib/types";
+import { mainItem, needsSize } from "@/lib/items";
+import type { Item, Proposal } from "@/lib/types";
 import { ProductImage } from "./ProductImage";
 
-const chip = "rounded-full bg-sand px-3 py-1 text-label font-medium text-on-sand";
 const button =
-  "min-h-11 flex-1 rounded-full border px-5 text-small font-medium transition-colors disabled:cursor-wait";
+  "min-h-12 flex-1 rounded-full px-5 text-body font-medium transition-colors disabled:cursor-wait";
+
+/** Each store keeps one accent dot, so the four proposals are easy to tell apart. */
+const STORE_DOT: Record<string, string> = {
+  northline: "bg-ink",
+  "mono-studio": "bg-sage",
+  "sol-social": "bg-terracotta",
+  haven: "bg-sand",
+};
+
+/** "Size M", "One size", or the sizes in stock when the shopper hasn't chosen yet. */
+export const sizeLabel = (item: Item) =>
+  item.sizesInStock.length === 0 ? "One size" : item.size ? `Size ${item.size}` : `Sizes ${item.sizesInStock.join(", ")}`;
 
 type Props = {
   proposal: Proposal;
@@ -16,59 +28,53 @@ type Props = {
 
 export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
   const headingId = `store-${proposal.id}`;
+  const hero = mainItem(proposal);
   return (
-    <article aria-labelledby={headingId} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 md:p-6">
-      <div className="flex flex-col gap-1">
-        <h2 id={headingId} className="font-display text-h2 font-medium text-ink">
-          {proposal.storeName}
-        </h2>
-        <p className="text-small text-muted">{proposal.rationale}</p>
+    <article aria-labelledby={headingId} className="flex flex-col gap-5 rounded-card bg-surface p-4 md:p-6">
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className={`mt-2 size-4 shrink-0 rounded-full ${STORE_DOT[proposal.storeId] ?? "bg-line"}`} />
+        <div className="flex flex-col gap-1">
+          <h2 id={headingId} className="font-display text-h1 font-medium text-ink">
+            {proposal.storeName}
+          </h2>
+          <p className="text-small text-muted">{proposal.rationale}</p>
+        </div>
       </div>
 
-      <ul className="grid grid-cols-2 gap-3 md:gap-4">
-        {proposal.items.map((item) => (
-          <li key={item.itemId} className="flex min-w-0 flex-col gap-2">
-            <ProductImage src={item.imageUrl} alt={item.name} category={item.category} />
-            <div className="flex items-start justify-between gap-2">
-              <p className="min-w-0 text-small font-medium text-ink">{item.name}</p>
-              <p className="text-small font-medium tabular-nums text-ink">{formatPrice(item.price)}</p>
-            </div>
-            <span className={`${chip} self-start`}>{item.size ? `Size ${item.size}` : "One size"}</span>
-          </li>
-        ))}
-      </ul>
-
-      {proposal.kept.length > 0 && (
-        <ul className="flex flex-wrap gap-2" aria-label="Pieces you're keeping">
-          {proposal.kept.map((piece) => (
-            <li key={piece} className={chip}>
-              Kept: {piece}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1.1fr_1fr]">
+        {hero && <ProductImage src={hero.imageUrl} alt={hero.name} category={hero.category} />}
+        <ul className="flex flex-col gap-3">
+          {proposal.items.map((item) => (
+            <li key={item.itemId} className="flex gap-3 rounded-photo bg-stone p-2">
+              <div className="w-16 shrink-0">
+                <ProductImage src={item.imageUrl} alt="" category={item.category} />
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-1 py-1">
+                <p className="text-small font-medium text-ink">{item.name}</p>
+                <p className="text-small text-muted">{sizeLabel(item)}</p>
+                <p className="font-display text-price text-ink tabular-nums">{formatPrice(item.price)}</p>
+              </div>
             </li>
           ))}
         </ul>
-      )}
+      </div>
 
       <div className="mt-auto flex flex-col gap-4 border-t border-line pt-4">
         <div className="flex items-baseline justify-between">
           <span className="text-small text-muted">Subtotal</span>
-          <span className="text-price font-medium tabular-nums text-ink">{formatPrice(proposal.subtotal)}</span>
+          <span className="font-display text-h2 text-ink tabular-nums">{formatPrice(proposal.subtotal)}</span>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <button
             type="button"
             onClick={onPreview}
             disabled={busy}
-            className={`${button} border-sage text-sage hover:bg-sage-tint`}
+            className={`${button} border border-sage text-sage hover:bg-sage-tint hover:text-sage-hover`}
           >
             Preview on me
           </button>
-          <button
-            type="button"
-            onClick={onPick}
-            disabled={busy}
-            className={`${button} border-line text-ink hover:bg-sage-tint`}
-          >
-            {busy ? "Picking…" : "Pick this store"}
+          <button type="button" onClick={onPick} disabled={busy} className={`${button} bg-sage text-on-sage hover:bg-sage-hover`}>
+            {busy ? "Picking…" : needsSize(proposal) ? "Choose sizes" : "Pick this store"}
           </button>
         </div>
       </div>
@@ -78,8 +84,8 @@ export function ProposalCard({ proposal, busy, onPreview, onPick }: Props) {
 
 type NoMatchProps = {
   proposal: Proposal;
-  budget: number;
-  nextBudget: number;
+  budget?: number;
+  nextBudget?: number;
   busy: boolean;
   onRaiseBudget: () => void;
 };
@@ -89,27 +95,32 @@ export function NoMatchCard({ proposal, budget, nextBudget, busy, onRaiseBudget 
   const headingId = `store-${proposal.id}`;
   return (
     <article aria-labelledby={headingId} className="flex flex-col gap-4 self-start rounded-card border border-dashed border-line bg-surface p-4 md:p-6">
-      <div className="flex flex-col gap-1">
-        <h2 id={headingId} className="font-display text-h2 font-medium text-ink">
-          {proposal.storeName}
-        </h2>
-        <p className="text-body text-ink">No match for this brief.</p>
-        <p className="text-small text-muted">{proposal.rationale}</p>
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className={`mt-2 size-4 shrink-0 rounded-full ${STORE_DOT[proposal.storeId] ?? "bg-line"}`} />
+        <div className="flex flex-col gap-1">
+          <h2 id={headingId} className="font-display text-h1 font-medium text-ink">
+            {proposal.storeName}
+          </h2>
+          <p className="text-body text-ink">No match for this brief.</p>
+          <p className="text-small text-muted">{proposal.rationale}</p>
+        </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
-          onClick={onRaiseBudget}
-          disabled={busy}
-          className={`${button} border-line text-ink hover:bg-sage-tint`}
-        >
-          {busy ? "Asking again…" : `Raise budget to ${formatPrice(nextBudget)}`}
-        </button>
-        <Link href="/" className={`${button} flex items-center justify-center border-line text-ink hover:bg-sage-tint`}>
+        {nextBudget && (
+          <button
+            type="button"
+            onClick={onRaiseBudget}
+            disabled={busy}
+            className={`${button} bg-sage text-on-sage hover:bg-sage-hover`}
+          >
+            {busy ? "Asking again…" : `Raise budget to ${formatPrice(nextBudget)}`}
+          </button>
+        )}
+        <Link href="/brief" className={`${button} flex items-center justify-center border border-line text-ink hover:bg-sage-tint`}>
           Edit brief
         </Link>
       </div>
-      <p className="sr-only">Current budget {formatPrice(budget)}.</p>
+      {budget && <p className="sr-only">Current budget {formatPrice(budget)}.</p>}
     </article>
   );
 }

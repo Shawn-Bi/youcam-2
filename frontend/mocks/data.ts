@@ -1,100 +1,99 @@
 import { ApiError, OutOfStockError } from "@/lib/errors";
+import { catalogItems, getCatalogItem, itemsInStore, toProposalItem, type CatalogItem } from "@/lib/catalog";
 import type { BriefInput, BriefResponse, Item, Proposal, TaskResult } from "@/lib/types";
 
 // Mock proposals for the demo brief "Silver-and-black concert look, under $120. Keep my boots."
-// Product images stay empty until the sample catalogs exist; the UI shows a placeholder.
-// Sample stores have no real shop, so product links go to a reserved example domain.
-const PRODUCT_URL = "https://example.com/";
+// Items come from the shared catalog (data/catalog.json), like the backend's will.
 
-const proposals: Proposal[] = [
+type Plan = { id: string; storeId: string; storeName: string; itemIds: string[]; rationale: string };
+
+const plansFor = (key: string): Plan[] => [
   {
-    id: "prop_northline",
+    id: `prop_northline_${key}`,
     storeId: "northline",
     storeName: "Northline",
-    items: [
-      {
-        itemId: "nl_racer_jacket",
-        name: "Racer leather jacket",
-        category: "outer",
-        price: 89,
-        size: "M",
-        sizesInStock: ["S", "M", "L"],
-        imageUrl: "",
-        productUrl: PRODUCT_URL,
-        locked: false,
-      },
-      {
-        itemId: "nl_luna_bag",
-        name: "Luna shoulder bag",
-        category: "bag",
-        price: 25,
-        size: null,
-        sizesInStock: [],
-        imageUrl: "",
-        productUrl: PRODUCT_URL,
-        locked: false,
-      },
-    ],
-    kept: [],
-    subtotal: 114,
+    itemIds: ["nl_racer_jacket", "nl_luna_bag"],
     rationale: "A sharp silver-striped layer that works with what you already own for a stage-ready look.",
-    version: 1,
-    selected: false,
   },
   {
-    id: "prop_mono",
+    id: `prop_mono_${key}`,
     storeId: "mono-studio",
     storeName: "Mono Studio",
-    items: [
-      {
-        itemId: "ms_shine_jacket",
-        name: "Shine zip jacket",
-        category: "outer",
-        price: 78,
-        size: "M",
-        sizesInStock: ["XS", "M", "XL"],
-        imageUrl: "",
-        productUrl: PRODUCT_URL,
-        locked: false,
-      },
-      {
-        itemId: "ms_nova_bag",
-        name: "Nova chain bag",
-        category: "bag",
-        price: 30,
-        size: null,
-        sizesInStock: [],
-        imageUrl: "",
-        productUrl: PRODUCT_URL,
-        locked: false,
-      },
-    ],
-    kept: [],
-    subtotal: 108,
+    itemIds: ["ms_shine_jacket", "ms_nova_bag"],
     rationale: "Minimal black shine with a silver chain bag, easy to move in all night.",
-    version: 1,
-    selected: false,
+  },
+  {
+    id: `prop_sol_${key}`,
+    storeId: "sol-social",
+    storeName: "Sol Social",
+    itemIds: ["sol_sequin_jacket", "sol_beaded_bag"],
+    rationale: "A silver sequin jacket that catches every stage light, with a beaded bag for a pop of color.",
+  },
+  {
+    id: `prop_haven_${key}`,
+    storeId: "haven",
+    storeName: "Haven",
+    itemIds: ["hv_quilted_jacket", "hv_canvas_sling"],
+    rationale: "A soft quilted layer that stays comfortable all night, with a hands-free sling for the crowd.",
   },
 ];
 
+// Bottoms use the bottoms size when given, otherwise the top size.
+const sizeFor = (item: CatalogItem, input: BriefInput): string | null =>
+  (item.category === "bottom" ? (input.sizes?.bottom ?? input.sizes?.top) : input.sizes?.top) ?? null;
+const fits = (item: CatalogItem, input: BriefInput) => {
+  const size = sizeFor(item, input);
+  return item.sizesInStock.length === 0 || !size || item.sizesInStock.includes(size);
+};
+
+/** An outfit has one upper piece (top or jacket), optional bottoms and an optional bag. */
+const slot = (item: CatalogItem) => (item.category === "top" ? "outer" : item.category);
+
+/** A catalog piece the brief names, e.g. "Build a look around the Grey knit sweater from Mono Studio." */
+const namedPiece = (text: string) => catalogItems.find((i) => text.toLowerCase().includes(i.name.toLowerCase()));
+
+function buildProposal(plan: Plan, input: BriefInput): Proposal {
+  const named = namedPiece(input.text);
+  const wanted = named?.storeId === plan.storeId && fits(named, input) ? named : undefined;
+  // Like the backend, never offer a size the shopper didn't ask for: swap in a
+  // same-category piece from this store that has it, or leave the piece out.
+  const picked = plan.itemIds.flatMap((itemId) => {
+    const first = getCatalogItem(itemId)!;
+    if (wanted && slot(wanted) === slot(first)) return [];
+    const item = fits(first, input) ? first : itemsInStore(plan.storeId).find((i) => i.category === first.category && fits(i, input));
+    return item ? [item] : [];
+  });
+  const chosen = wanted ? [wanted, ...picked] : picked;
+  const items = chosen.map((item) => toProposalItem(item, sizeFor(item, input)));
+  return {
+    id: plan.id,
+    storeId: plan.storeId,
+    storeName: plan.storeName,
+    items,
+    kept: [],
+    subtotal: items.reduce((sum, i) => sum + i.price, 0),
+    rationale: wanted ? `Built around the ${wanted.name} you picked, with a piece that finishes the look.` : plan.rationale,
+    version: 1,
+    selected: false,
+  };
+}
+
 /**
- * Mimics the backend: a store whose proposal is over budget answers with no items,
- * so the no-match state can be tried by entering a budget under $114 or $108.
+ * Mimics the backend: a store answers with no items when its outfit is over budget
+ * or it has no clothing in the shopper's size (a bag alone is not a look).
  */
 export function mockBriefResponse(input: BriefInput): BriefResponse {
+  // Each brief gets its own proposal ids, as the backend does, so saved previews never carry over.
+  const key = Date.now().toString(36);
   return {
-    briefId: `brief_${Date.now().toString(36)}`,
-    proposals: proposals.map((p) =>
-      p.subtotal <= input.budget
-        ? { ...p, kept: input.keep }
-        : {
-            ...p,
-            items: [],
-            kept: [],
-            subtotal: 0,
-            rationale: `Nothing in your size came in under $${input.budget}.`,
-          },
-    ),
+    briefId: `brief_${key}`,
+    proposals: plansFor(key).map((plan) => {
+      const p = buildProposal(plan, input);
+      const noMatch = (rationale: string): Proposal => ({ ...p, items: [], kept: [], subtotal: 0, rationale });
+      if (!p.items.some((i) => i.category !== "bag")) return noMatch(`Nothing in size ${input.sizes?.top} for this look.`);
+      if (input.budget && p.subtotal > input.budget) return noMatch(`Nothing${input.sizes ? " in your size" : ""} came in under $${input.budget}.`);
+      return { ...p, kept: input.keep };
+    }),
   };
 }
 
@@ -130,7 +129,9 @@ export function mockGetPreview(previewId: string): TaskResult {
   if (elapsed < 1000) return { status: "queued" };
   if (elapsed < 4000) return { status: "running" };
   if (task.fails) return { status: "failed", error: "The try-on service couldn't read this photo. Try again." };
-  return { status: "success", imageUrl: mockPhotoUrl ?? "" };
+  // The mock keeps the photo only in memory, so a page reload loses it.
+  if (!mockPhotoUrl) return { status: "failed", error: "Mock mode lost your photo when the page reloaded. Post the brief again." };
+  return { status: "success", imageUrl: mockPhotoUrl };
 }
 
 // --- Video ------------------------------------------------------------------------
@@ -197,17 +198,6 @@ export function mockGetVideo(videoId: string): TaskResult {
 }
 
 // --- Revising a proposal ---------------------------------------------------------
-const alternatives: Record<string, Item[]> = {
-  northline: [
-    { itemId: "nl_vinyl_jacket", name: "Cropped vinyl jacket", category: "outer", price: 72, size: null, sizesInStock: ["S", "M"], imageUrl: "", productUrl: PRODUCT_URL, locked: false },
-    { itemId: "nl_mesh_bag", name: "Mesh mini bag", category: "bag", price: 15, size: null, sizesInStock: [], imageUrl: "", productUrl: PRODUCT_URL, locked: false },
-  ],
-  "mono-studio": [
-    { itemId: "ms_satin_bomber", name: "Satin bomber", category: "outer", price: 70, size: null, sizesInStock: ["M", "L"], imageUrl: "", productUrl: PRODUCT_URL, locked: false },
-    { itemId: "ms_disc_bag", name: "Disc bag", category: "bag", price: 18, size: null, sizesInStock: [], imageUrl: "", productUrl: PRODUCT_URL, locked: false },
-  ],
-};
-
 const withSubtotal = (p: Proposal, items: Item[]): Proposal => ({
   ...p,
   items,
@@ -230,7 +220,7 @@ export function mockReplace(proposal: Proposal, itemId: string): Proposal {
   const current = proposal.items.find((i) => i.itemId === itemId);
   if (!current) throw new ApiError("That item is no longer in this proposal.");
   const inUse = new Set(proposal.items.map((i) => i.itemId));
-  const pool = [...(alternatives[proposal.storeId] ?? []), ...proposals.flatMap((p) => (p.storeId === proposal.storeId ? p.items : []))];
+  const pool = itemsInStore(proposal.storeId).map((i) => toProposalItem(i, null));
   const next = pool.find((i) => i.category === current.category && !inUse.has(i.itemId));
   if (!next) throw new ApiError(`${proposal.storeName} has no other ${current.category === "bag" ? "bags" : "pieces"} that fit this brief.`);
   const size = next.sizesInStock.length === 0 ? null : next.sizesInStock.includes(current.size ?? "") ? current.size : next.sizesInStock[0];

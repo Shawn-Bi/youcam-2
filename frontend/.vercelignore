@@ -1,0 +1,5 @@
+# Keep local settings out of Vercel uploads: .env.local turns mock mode on,
+# and the live site gets its settings from the Vercel project instead.
+.env*.local
+node_modules
+.next

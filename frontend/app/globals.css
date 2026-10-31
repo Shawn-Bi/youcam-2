@@ -7,8 +7,8 @@
   --ink: #1f2420;
   --muted: #5c625d;
   --line: #dad5c8;
-  --sage: #4a5d4e;
-  --sage-hover: #3c4d40;
+  --sage: #5a7360;
+  --sage-hover: #4a5d4e;
   --on-sage: #ffffff;
   --sage-tint: #e3e8e1;
   --sand: #d9c9b0;
@@ -16,26 +16,8 @@
   --terracotta: #d2693f;
   --terracotta-text: #a84e2a;
   --danger: #a63d2a;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --stone: #1a1d1a;
-    --surface: #232724;
-    --ink: #eeece4;
-    --muted: #a9aea8;
-    --line: #3a3f3b;
-    --sage: #8fa894;
-    --sage-hover: #a3baa7;
-    --on-sage: #14201a;
-    --sage-tint: #2c3a2f;
-    --sand: #5a4d3a;
-    --on-sand: #f1e6d3;
-    --terracotta: #e07a4f;
-    --terracotta-text: #ee9a73;
-    --danger: #e07563;
-    color-scheme: dark;
-  }
+  /* Light only: the catalog photos and the approved mock-ups are light. */
+  color-scheme: light;
 }
 
 @theme inline {
@@ -57,23 +39,29 @@
   --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-dm-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --text-display: 48px;
-  --text-display--line-height: 52px;
-  --text-h1: 32px;
-  --text-h1--line-height: 38px;
-  --text-h2: 24px;
-  --text-h2--line-height: 30px;
-  --text-body: 16px;
-  --text-body--line-height: 24px;
-  --text-small: 14px;
-  --text-small--line-height: 20px;
-  --text-label: 12px;
-  --text-label--line-height: 16px;
-  --text-price: 18px;
-  --text-price--line-height: 24px;
+  --text-hero: 88px;
+  --text-hero--line-height: 90px;
+  --text-display: 56px;
+  --text-display--line-height: 60px;
+  --text-h1: 40px;
+  --text-h1--line-height: 46px;
+  --text-h2: 28px;
+  --text-h2--line-height: 34px;
+  --text-body: 17px;
+  --text-body--line-height: 26px;
+  --text-small: 15px;
+  --text-small--line-height: 22px;
+  --text-label: 13px;
+  --text-label--line-height: 18px;
+  --text-price: 20px;
+  --text-price--line-height: 26px;
 
-  --radius-field: 6px;
-  --radius-card: 12px;
+  /* Page width: wide enough that large screens don't show big empty margins. */
+  --container-page: 1440px;
+
+  --radius-field: 10px;
+  --radius-card: 20px;
+  --radius-photo: 16px;
 }
 
 body {

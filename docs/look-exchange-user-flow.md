@@ -17,10 +17,10 @@ Companion to the [Look Exchange PRD](look-exchange-prd.md). Concept images are i
 ```mermaid
 flowchart TD
     A[Landing: Post a look brief] --> B[Upload photo + consent]
-    B --> C[Write brief: style, budget, sizes, pieces to keep]
+    B --> C[Describe the look, set budget and sizes, list pieces to keep]
     C --> D{Brief valid?}
     D -- No --> C
-    D -- Yes --> E[Two stores build proposals]
+    D -- Yes --> E[Four stores build proposals]
     E --> F{Matches found?}
     F -- No --> G[No-match state: loosen budget or style]
     G --> C
@@ -54,12 +54,12 @@ flowchart TD
 
 **3. Write the brief**
 - Free-text brief, for example: “Silver-and-black concert look, under $120. Keep my boots.”
-- Structured fields beside it: budget, occasion, style words, sizes, and owned pieces to keep.
-- **Sizes:** the shopper picks their usual size for each category they want proposed: tops/jackets (XS–XXL) and, if relevant, bottoms (waist or XS–XXL). Bags need no size. Sizes are required before stores search.
-- The backend turns the brief into structured data. If a required part is missing or unclear (no budget, impossible budget, no size), the shopper is asked to fix it before stores search.
+- Budget and top size fields sit under the sentence (bottoms size optional); a size or budget mentioned in the sentence fills them in. Owned pieces to keep are added as chips.
+- **Sizes:** the shopper picks their usual size for each category they want proposed: tops/jackets (XS–XXL) and, if relevant, bottoms (XS–XXL, optional). Bags need no size.
+- Budget and top size are required; the form asks for them before stores search.
 
 **4. Stores build proposals**
-- Two sample stores each assemble one proposal from their own catalog. The app shows them like real stores; the README explains they are samples.
+- Four sample stores each assemble one proposal from their own catalog. The app shows them like real stores; the README explains they are samples.
 - Stores only propose items available in the shopper's chosen size. Availability is checked in code against the catalog, not left to the language model.
 - A progress state shows each store “building a proposal.”
 - If a store finds no valid match, it says so. The app never invents a product.
@@ -120,10 +120,10 @@ flowchart TD
 ```mermaid
 flowchart TD
     A[首页：发布穿搭需求] --> B[上传照片并同意授权]
-    B --> C[填写需求：风格、预算、尺码、保留单品]
+    B --> C[描述造型，填写预算和尺码，列出保留单品]
     C --> D{需求有效？}
     D -- 否 --> C
-    D -- 是 --> E[两家商店生成方案]
+    D -- 是 --> E[四家商店生成方案]
     E --> F{找到匹配商品？}
     F -- 否 --> G[无匹配：放宽预算或风格]
     G --> C
@@ -157,12 +157,12 @@ flowchart TD
 
 **3. 填写需求**
 - 自由文本需求，例如：“银黑色演唱会造型，预算 120 美元以内，保留我自己的靴子。”
-- 旁边提供结构化字段：预算、场合、风格关键词、尺码、要保留的自有单品。
-- **尺码：** 用户为需要推荐的每个品类选择常穿尺码：上衣/外套（XS–XXL），如需下装则选择腰围或 XS–XXL。包袋无需尺码。开始检索前必须填写尺码。
-- 后端将需求转为结构化数据。若缺少必要信息或信息不明确（没有预算、预算不可行、没有尺码），先请用户修改，再开始检索。
+- 句子下方有预算和上衣尺码字段（下装尺码可选）；句子里提到的尺码和预算会自动填进去。要保留的自有单品以标签形式添加。
+- **尺码：** 用户为需要推荐的每个品类选择常穿尺码：上衣/外套（XS–XXL），如需下装则选择 XS–XXL（可选）。包袋无需尺码。
+- 预算和上衣尺码为必填项，开始检索前表单会先要求填写。
 
 **4. 商店生成方案**
-- 两家示例商店各自从自己的目录组装一个方案。应用中按真实商店样式展示；README 中说明它们是示例。
+- 四家示例商店各自从自己的目录组装一个方案。应用中按真实商店样式展示；README 中说明它们是示例。
 - 商店只推荐用户所选尺码有货的商品。库存由代码根据目录核对，不交给语言模型判断。
 - 进度状态显示每家商店“正在生成方案”。
 - 若商店找不到有效商品，会直接说明，系统绝不编造商品。

@@ -6,7 +6,7 @@
 
 ## 1. What you are building
 
-The whole user-facing app: a responsive React site where a shopper posts a brief, compares two stores' proposals, previews them on their own photo, revises, picks a store, generates a video, and saves. You never call YouCam directly; everything goes through Shawn's backend using the [shared contract](look-exchange-prd.md#6-shared-api-contract).
+The whole user-facing app: a responsive React site where a shopper posts a brief, compares four stores' proposals, previews them on their own photo, revises, picks a store, generates a video, and saves. You never call YouCam directly; everything goes through Shawn's backend using the [shared contract](look-exchange-prd.md#6-shared-api-contract).
 
 ## 2. Stack
 
@@ -36,11 +36,18 @@ Colors, fonts, spacing and the favicon come from Dennis's design system and go i
 
 ## 3. Screens
 
-### 3.1 Brief (`/`) — concept `01-brief.png`
+### 3.0 Shop (new)
+- Home (`/`): photo hero "Four stores. One look. Yours." with "Post a style brief" and "Browse the shops", a tile for each store, and a "New in" row.
+- All products (`/shop`), stores (`/stores`), one store (`/stores/:storeId`): product grid with filters for category, store, size and price, and a "Not sure? Post a style brief" banner.
+- Product (`/products/:itemId`): photo, price, size buttons (sold-out sizes disabled), "More from" the store, and "Style a look around this", which opens `/brief?item=…&size=…` with the piece written into the brief.
+- All product data comes from the shared catalog `data/catalog.json`; photos are in `public/catalog/`. No cart.
+
+### 3.1 Brief (`/brief`) — concept `01-brief.png`
 - Photo upload: drag/drop or file picker, preview, JPG/PNG only, under 10 MB, clear error text.
 - Consent checkbox, required: "I agree to send this photo to YouCam for try-on processing." Link to a short privacy note.
-- Brief text area plus structured fields: **budget** (number), **occasion**, **sizes** (top/jacket XS–XXL required; bottom optional), **keep** (owned pieces as chips).
-- "Get proposals" disabled until photo, consent, budget and top size are set.
+- Layout (concept C2): title "Tell us the look" centered; full-body photo on the left with the consent line under it; on the right, one sentence "The look you want" and "Pieces you already own and want to keep" (chips). Fits one desktop screen.
+- Budget (required), top or jacket size (required) and bottoms size (optional) sit under the sentence, matching the backend. `lib/parseBrief.ts` reads a size ("in size S", "I wear a medium") and a budget ("under $120", "80 dollars") from the sentence and fills those fields until the shopper edits them by hand. No occasion field.
+- "Get proposals" needs a photo, consent, the sentence, a budget and a top size. A 422 error for a field the form doesn't show appears above the button.
 - Calls `POST /api/photos` then `POST /api/briefs`. Show `422` field errors next to the right field.
 
 ### 3.2 Proposals (`/proposals/:briefId`) — concept `02-proposals.png`
