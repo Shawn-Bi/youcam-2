@@ -1,0 +1,40 @@
+"""Environment settings. A local backend/.env fills in values the shell did not set."""
+import os
+from pathlib import Path
+
+ENV_FILE = Path(__file__).resolve().parent / '.env'
+
+
+def load_env(path=ENV_FILE):
+    """Copy KEY=value lines from `path` into os.environ without overriding anything already set."""
+    if os.getenv('SKIP_DOTENV'):
+        return
+    try:
+        text = path.read_text(encoding='utf-8-sig')
+    except OSError:
+        return
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        name, value = line.split('=', 1)
+        name, value = name.strip(), value.strip().strip('"\'')
+        if name and value:
+            os.environ.setdefault(name, value)
+
+
+def int_env(name, default):
+    try:
+        return int(os.getenv(name, ''))
+    except ValueError:
+        return default
+
+
+load_env()
+
+# The live frontend serves the product photos too; used only if the repo's copy is not on disk.
+FRONTEND_PUBLIC_URL = os.getenv('FRONTEND_PUBLIC_URL', 'https://look-exchange.vercel.app').rstrip('/')
+FRONTEND_ORIGINS = [x.strip().rstrip('/') for x in os.getenv('FRONTEND_ORIGINS', 'http://localhost:3000').split(',') if x.strip()]
+FRONTEND_ORIGIN_REGEX = os.getenv('FRONTEND_ORIGIN_REGEX') or None
+# YouCam's bag try-on requires a gender and the brief form does not ask for one.
+BAG_GENDER = os.getenv('BAG_GENDER', 'female').strip().lower()

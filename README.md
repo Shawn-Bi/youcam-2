@@ -26,7 +26,7 @@ Look Exchange 中的四家商店及其商品、价格和尺码都是为本次黑
 ## Current state / 当前状态
 
 - **Frontend** ([`frontend/`](frontend/README.md)): every screen is built — shop, stores, products, brief, four-store proposals, try-on, video and saved look. Live at https://look-exchange.vercel.app, connected to the backend on Render.
-- **Backend:** not started.
+- **Backend** ([`backend/`](backend/README.md)): FastAPI service implementing the shared API contract. Live on Render at https://look-exchange-backend.onrender.com with real YouCam clothes try-on, bag try-on and video, and unit guards.
 
 - **前端**（[`frontend/`](frontend/README.md)）：所有页面已完成——商店、商品、需求、四家商店的方案、试穿、视频和保存页。已上线 https://look-exchange.vercel.app，连接 Render 上的后端。
-- **后端：** 尚未开始。
+- **后端**（[`backend/`](backend/README.md)）：FastAPI 服务，已实现共享接口契约。已部署在 Render（https://look-exchange-backend.onrender.com），使用真实的 YouCam 服装试穿、包袋试穿和视频，并有单位用量上限。

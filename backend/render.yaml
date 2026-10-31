@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: look-exchange-backend
+    runtime: python
+    plan: free
+    branch: backend-development
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: YOUCAM_API_KEY
+        sync: false
+      - key: FRONTEND_ORIGINS
+        sync: false
