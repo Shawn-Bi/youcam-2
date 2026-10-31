@@ -12,7 +12,9 @@ log = logging.getLogger('look-exchange')
 for noisy in ('httpx', 'httpcore'):
     logging.getLogger(noisy).setLevel(logging.WARNING)
 POLL_SECONDS = 3
-DEADLINES = {'preview': 120, 'video': 300}
+# Seconds to wait for YouCam. A video once took over five minutes, and YouCam still finished and charged for it
+# after we had given up, so these are generous: giving up early costs units and shows the shopper a false failure.
+DEADLINES = {'preview': 180, 'video': 900}
 
 
 class Jobs:
@@ -100,7 +102,8 @@ class Jobs:
                             return
                         await asyncio.sleep(POLL_SECONDS)
         except TimeoutError:
-            self.fail(task, session, 'Generation timed out. Please try again.', 'timeout')
+            # YouCam may still finish this task and charge for it, so the slot stays used.
+            self.fail(task, session, 'Generation timed out. Please try again.', 'timeout', release=False)
         except YouCamError as exc:
             self.fail(task, session, str(exc), exc.code)
         except (httpx.HTTPError, ValueError, TypeError, KeyError):
@@ -116,10 +119,11 @@ class Jobs:
             log.warning('video source upload failed (%s); falling back to the result URL', exc.code)
             return await api.create_video(source_url=source_url)
 
-    def fail(self, task, session, message, code):
+    def fail(self, task, session, message, code, release=True):
+        """Mark a task failed. Its slot is given back unless YouCam might still charge for it."""
         log.warning('%s failed: %s', task['kind'], code)
         task.update(status='failed', error=message)
-        if session is not None:
+        if session is not None and release:
             self.release(session, task['kind'])
 
     @staticmethod

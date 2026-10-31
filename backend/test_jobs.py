@@ -182,7 +182,7 @@ def test_success_without_a_usable_url_fails(fake):
     assert task['status'] == 'failed' and 'imageUrl' not in task
 
 
-def test_a_job_that_never_finishes_times_out_and_frees_its_slot(fake, monkeypatch):
+def test_a_job_that_never_finishes_times_out_but_keeps_its_slot_because_youcam_may_still_charge(fake, monkeypatch):
     monkeypatch.setitem(module.DEADLINES, 'preview', 0.05)
     monkeypatch.setattr(module, 'POLL_SECONDS', 0.01)
     fake.script = [{'task_status': 'running'}] * 1000
@@ -195,7 +195,12 @@ def test_a_job_that_never_finishes_times_out_and_frees_its_slot(fake, monkeypatc
         return jobs, task
 
     jobs, task = run(go())
-    assert task['status'] == 'failed' and 'timed out' in task['error'] and jobs.counts[(jobs.day(), 's', 'preview')] == 0
+    assert task['status'] == 'failed' and 'timed out' in task['error']
+    assert jobs.counts[(jobs.day(), 's', 'preview')] == 1  # still counted: a retry must not look free
+
+
+def test_deadlines_are_generous_enough_for_a_slow_video():
+    assert module.DEADLINES['video'] >= 900 and module.DEADLINES['preview'] >= 180
 
 
 def test_unexpected_transport_errors_are_hidden_from_shoppers(fake):

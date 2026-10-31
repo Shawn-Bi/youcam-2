@@ -45,11 +45,11 @@ Routes follow the shared contract in `docs/look-exchange-prd.md` section 6 and t
 
 ## Measured with the real API (2026-10-30)
 
-One clothes try-on (`outer`, full-body photo) took about 13 seconds and cost 2 units. One 5-second 480p video made from that result took 47 to 59 seconds and cost 5 units. One bag try-on took 19 to 40 seconds and cost 2 units; both `female` and `male` are accepted. The preview deadline is 120 seconds and the video deadline 300 seconds. Request URLs are never logged, because YouCam's are signed.
+One clothes try-on (`outer`, full-body photo) took about 13 seconds and cost 2 units. One 5-second 480p video made from that result took 47 to 59 seconds and cost 5 units. One bag try-on took 19 to 40 seconds and cost 2 units; both `female` and `male` are accepted. One video on the live site took more than five minutes; YouCam still finished it and charged 5 units after the backend had given up, so the deadlines are 180 seconds for a preview and 900 seconds for a video. Request URLs are never logged, because YouCam's are signed.
 
 ## Unit guards
 
-YouCam charges only for successful tasks. A session is one uploaded photo. Per session the defaults allow 6 running or successful previews and 2 videos; a failed task gives its slot back, while the attempt caps still bound retries. Per UTC day the defaults allow 40 tasks and 10 videos. Limits reset when the server restarts and a new upload starts a new session, so they are a guard rail, not abuse prevention.
+YouCam charges only for successful tasks. A session is one uploaded photo. Per session the defaults allow 6 running or successful previews and 2 videos; a failed task gives its slot back (except one that timed out, because YouCam may still finish and charge for it), while the attempt caps still bound retries. Per UTC day the defaults allow 40 tasks and 10 videos. Limits reset when the server restarts and a new upload starts a new session, so they are a guard rail, not abuse prevention.
 
 ## Limitations
 
