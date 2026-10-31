@@ -41,6 +41,12 @@ export default function Home() {
             >
               Browse the shops
             </Link>
+            <Link
+              href="/example"
+              className="inline-flex min-h-11 items-center border-b-2 border-terracotta text-body font-medium text-ink"
+            >
+              See an example
+            </Link>
           </div>
         </div>
         {inset && (

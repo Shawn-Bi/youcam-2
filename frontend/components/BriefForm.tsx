@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApiError, ValidationError, createBrief, uploadPhoto } from "@/lib/api";
 import { loadLatestBrief, saveBrief } from "@/lib/briefStore";
@@ -390,13 +391,18 @@ export function BriefForm() {
           </p>
         )}
 
-        <button
-          type="submit"
-          aria-busy={submitting}
-          className="min-h-16 self-start rounded-full bg-sage px-12 text-h2 font-medium text-on-sage hover:bg-sage-hover [@media(max-height:820px)]:min-h-12 [@media(max-height:820px)]:text-body"
-        >
-          {submitting ? "Getting proposals…" : "Get proposals"}
-        </button>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <button
+            type="submit"
+            aria-busy={submitting}
+            className="min-h-16 rounded-full bg-sage px-12 text-h2 font-medium text-on-sage hover:bg-sage-hover [@media(max-height:820px)]:min-h-12 [@media(max-height:820px)]:text-body"
+          >
+            {submitting ? "Getting proposals…" : "Get proposals"}
+          </button>
+          <Link href="/example" className="inline-flex min-h-11 items-center border-b-2 border-terracotta text-body font-medium text-ink">
+            See an example
+          </Link>
+        </div>
       </div>
     </form>
   );

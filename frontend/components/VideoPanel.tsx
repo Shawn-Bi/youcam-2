@@ -16,10 +16,12 @@ type Props = {
   /** The try-on preview the video is made from (the outfit's main piece). */
   previewId: string | null;
   itemName: string;
+  /** A finished video to play as it is; the example page uses this and never asks the backend. */
+  finished?: { videoUrl: string; poster?: string };
 };
 
 /** On the picked store: turn the finished try-on preview into a 5-second AI video. */
-export function VideoPanel({ proposal, previewId, itemName }: Props) {
+export function VideoPanel({ proposal, previewId, itemName, finished }: Props) {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,8 +54,27 @@ export function VideoPanel({ proposal, previewId, itemName }: Props) {
     "min-h-12 rounded-full bg-sage px-6 text-body font-medium text-on-sage hover:bg-sage-hover disabled:cursor-wait";
   const item = itemName.toLowerCase();
 
+  const player = (videoUrl: string, poster?: string) => (
+    <div className="relative w-full max-w-sm overflow-hidden rounded-card border border-line bg-surface">
+      <video
+        src={videoUrl}
+        poster={poster}
+        autoPlay={!reducedMotion}
+        muted
+        loop
+        playsInline
+        controls
+        aria-label={`AI-generated video of ${finished ? "the example shopper" : "you"} in the ${proposal.storeName} look`}
+        className="aspect-[3/4] w-full object-cover"
+      />
+      <FrameLabel ai>AI-generated video</FrameLabel>
+    </div>
+  );
+
   let body: React.ReactNode;
-  if (!previewId || preview?.status === "failed" || preview?.status === "timeout" || (preview?.status === "success" && !previewReady)) {
+  if (finished) {
+    body = player(finished.videoUrl, finished.poster);
+  } else if (!previewId || preview?.status === "failed" || preview?.status === "timeout" || (preview?.status === "success" && !previewReady)) {
     body = <p className="text-body text-muted">Preview the {item} on your photo first, then make a video from it.</p>;
   } else if (!previewReady) {
     body = <p className="text-body text-muted">Your try-on preview is still being made. The video can start once it&apos;s ready.</p>;
@@ -67,21 +88,7 @@ export function VideoPanel({ proposal, previewId, itemName }: Props) {
       </div>
     );
   } else if (video?.status === "success" && video.videoUrl) {
-    body = (
-      <div className="relative w-full max-w-sm overflow-hidden rounded-card border border-line bg-surface">
-        <video
-          src={video.videoUrl}
-          autoPlay={!reducedMotion}
-          muted
-          loop
-          playsInline
-          controls
-          aria-label={`AI-generated video of you in the ${proposal.storeName} look`}
-          className="aspect-[3/4] w-full object-cover"
-        />
-        <FrameLabel ai>AI-generated video</FrameLabel>
-      </div>
-    );
+    body = player(video.videoUrl);
   } else if (video?.status === "timeout") {
     // The video may still be rendering: check the same task again instead of paying for a new one.
     body = (
