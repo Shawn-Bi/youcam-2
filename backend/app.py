@@ -8,13 +8,12 @@ import uuid
 import warnings
 from contextlib import asynccontextmanager, suppress
 from copy import deepcopy
-from html import escape
 
+import httpx
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field
 from starlette.requests import Request
@@ -26,9 +25,11 @@ from youcam import GENDERS
 
 logging.basicConfig(level=logging.INFO)
 jobs = Jobs()
-ROOT = catalog.ROOT
-PUBLIC_BASE_URL = config.PUBLIC_BASE_URL
 TTL = 3600  # seconds of inactivity before a session's data is dropped
+# Items a video can be made from: the try-on of a piece of clothing. A bag preview restages the shopper in a new scene.
+VIDEO_SOURCES = catalog.UPPER + ('bottom',)
+# How each catalog category is sent to YouCam.
+YOUCAM_CATEGORY = {'top': 'upper_body', 'outer': 'outer', 'bottom': 'lower_body', 'bag': 'bag'}
 ACTIVE = ('queued', 'running', 'success')
 MAX_PHOTO_BYTES = 10_000_000
 
@@ -68,7 +69,6 @@ app.add_middleware(
     CORSMiddleware, allow_origins=config.FRONTEND_ORIGINS, allow_origin_regex=config.FRONTEND_ORIGIN_REGEX,
     allow_methods=['GET', 'POST', 'PATCH'], allow_headers=['Content-Type'],
 )
-app.mount('/assets', StaticFiles(directory=ROOT / 'static'), name='assets')
 
 # The frontend only reads these 422 field names, and shows the text to shoppers as written.
 FIELD_NAMES = {'photoId': 'photo', 'sizes': 'topSize', 'sizes.top': 'topSize'}
@@ -135,22 +135,21 @@ def item_of(p, item_id):
     return next((i for i in p['items'] if i['itemId'] == item_id), None)
 
 
-def public_item(p, item, size):
-    return catalog.public_item(p['storeId'], item, size, PUBLIC_BASE_URL)
-
-
 def subtotal(items):
     return round(sum(i['price'] for i in items), 2)
 
 
 def describe(p, brief):
-    listed = [catalog.find(p['storeId'], i['itemId']) for i in p['items']]
-    return catalog.rationale(listed, catalog.words(brief['text'] + ' ' + brief['occasion']), p['subtotal'], brief['budget'])
+    listed = [catalog.find(i['itemId']) for i in p['items']]
+    anchor = brief['anchor'] if brief['anchor'] and item_of(p, brief['anchor']['itemId']) else None
+    return catalog.rationale(listed, catalog.normalize(brief['text'] + ' ' + brief['occasion']), p['subtotal'], brief['budget'], anchor)
 
 
 def new_proposal(store_id, brief_id, brief):
-    picked, reason = catalog.propose(store_id, brief['size'], brief['budget'], brief['text'] + ' ' + brief['occasion'], brief['keep'])
-    items = [catalog.public_item(store_id, i, brief['size'], PUBLIC_BASE_URL) for i in picked]
+    picked, reason = catalog.propose(
+        store_id, brief['size'], brief['budget'], brief['text'] + ' ' + brief['occasion'], brief['keep'], brief['bottomSize'], brief['anchor'],
+    )
+    items = [catalog.public_item(i, catalog.size_for(i, brief['size'], brief['bottomSize'])) for i in picked]
     return record(
         id=ident(), briefId=brief_id, storeId=store_id, storeName=catalog.STORES[store_id]['storeName'], items=items,
         kept=brief['keep'], subtotal=subtotal(items), rationale=reason, version=1, selected=False,
@@ -197,11 +196,12 @@ class Brief(BaseModel):
     occasion: str = ''
     sizes: dict[str, str] = Field(default_factory=dict)
     keep: list[str] = Field(default_factory=list)
+    itemId: str | None = None  # optional: build every store's outfit around this catalog piece
 
 
 @app.get('/api/health')
 async def health():
-    return {'status': 'ok', 'youcamConfigured': bool(os.getenv('YOUCAM_API_KEY'))}
+    return {'status': 'ok', 'youcamConfigured': bool(os.getenv('YOUCAM_API_KEY')), 'catalogItems': len(catalog.ITEMS)}
 
 
 @app.get('/api/catalogs/{store_id}')
@@ -209,26 +209,7 @@ async def get_catalog(store_id: str):
     store = catalog.STORES.get(store_id)
     if store is None:
         return error(404, 'Catalog not found.')
-    return {'storeId': store_id, 'sampleStore': True, 'items': [catalog.public_item(store_id, i, None, PUBLIC_BASE_URL) for i in store['items']]}
-
-
-@app.get('/shop/{store_id}/{item_id}', response_class=HTMLResponse)
-async def product_page(store_id: str, item_id: str):
-    store = catalog.STORES.get(store_id)
-    item = catalog.find(store_id, item_id) if store else None
-    if item is None:
-        return HTMLResponse('<h1>Not found</h1>', status_code=404)
-    sizes = ', '.join(item['sizesInStock']) or 'One size'
-    return HTMLResponse(
-        '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-        f"<title>{escape(item['name'])} · {escape(store['storeName'])}</title>"
-        '<body style="font-family:system-ui,sans-serif;max-width:28rem;margin:2rem auto;padding:0 1rem;color:#1f2421">'
-        f"<p><strong>{escape(store['storeName'])}</strong></p>"
-        f"<img src=\"{escape(item['imagePath'])}\" alt=\"{escape(item['name'])}\" style=\"width:100%;border-radius:12px\">"
-        f"<h1>{escape(item['name'])}</h1><p style=\"font-size:1.25rem\">{escape(catalog.money(item['price']))}</p>"
-        f'<p>Sizes in stock: {escape(sizes)}</p>'
-        '<p style="color:#5f665f">This is a sample store made for the Look Exchange hackathon demo. Nothing here can be bought.</p>'
-    )
+    return {'storeId': store_id, 'sampleStore': True, 'items': [catalog.public_item(i, None) for i in store['items']]}
 
 
 @app.post('/api/photos')
@@ -268,12 +249,18 @@ async def create_brief(body: Brief):
     size = body.sizes.get('top', '').strip().upper()
     if size not in catalog.SIZES:
         errors['topSize'] = FIELD_MESSAGES['topSize']
+    bottom_size = body.sizes.get('bottom', '').strip().upper() or None
+    if bottom_size and bottom_size not in catalog.SIZES:
+        errors['bottomSize'] = 'Choose a bottoms size from the list.'
     if errors:
         return JSONResponse(status_code=422, content={'errors': errors})
     get(photos, body.photoId)
     keep = [k.strip()[:80] for k in body.keep if k.strip()][:10]
     key = ident()
-    briefs[key] = record(photoId=body.photoId, text=text, budget=body.budget, occasion=body.occasion.strip()[:200], size=size, keep=keep)
+    briefs[key] = record(
+        photoId=body.photoId, text=text, budget=body.budget, occasion=body.occasion.strip()[:200], size=size, bottomSize=bottom_size, keep=keep,
+        anchor=catalog.find_anchor(text, body.itemId),
+    )
     result = [new_proposal(store_id, key, briefs[key]) for store_id in catalog.STORES]
     for p in result:
         proposals[p['id']] = p
@@ -294,7 +281,7 @@ async def update(pid: str, item_id: str, patch: dict):
     if 'size' in patch and patch['size'] not in item['sizesInStock']:
         others = [i for i in p['items'] if i is not item]
         options = catalog.in_size(p['storeId'], item, others, patch['size'], brief['budget'] if brief else float('inf'))
-        return JSONResponse(status_code=409, content={'code': 'out_of_stock', 'alternatives': [public_item(p, i, patch['size']) for i in options]})
+        return JSONResponse(status_code=409, content={'code': 'out_of_stock', 'alternatives': [catalog.public_item(i, patch['size']) for i in options]})
     item.update(patch)
     p['version'] += 1
     return public(p)
@@ -320,7 +307,7 @@ async def replace(pid: str, body: ReplaceBody):
     chosen = catalog.replacement(p['storeId'], item, others, brief['budget'], brief['text'] + ' ' + brief['occasion'], (body.instruction or '')[:200])
     if chosen is None:
         return error(409, 'No replacement fits the size and budget.')
-    p['items'][p['items'].index(item)] = public_item(p, chosen, item['size'])
+    p['items'][p['items'].index(item)] = catalog.public_item(chosen, item['size'])
     p['subtotal'] = subtotal(p['items'])
     p['rationale'] = describe(p, brief)
     p['version'] += 1
@@ -346,6 +333,20 @@ class PreviewBody(BaseModel):
     gender: str | None = None  # optional; only bag try-on uses it, and the server default applies when omitted
 
 
+async def garment_image(item):
+    """The product photo, from the repo checkout, or else from the live frontend, which serves the same files."""
+    path = catalog.image_file(item)
+    if path.is_file():
+        return path.read_bytes()
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.get(config.FRONTEND_PUBLIC_URL + item['imageUrl'])
+            response.raise_for_status()
+            return response.content
+    except httpx.HTTPError:
+        return None
+
+
 @app.post('/api/proposals/{pid}/previews')
 async def start_preview(pid: str, body: PreviewBody):
     clean()
@@ -355,7 +356,7 @@ async def start_preview(pid: str, body: PreviewBody):
     item = item_of(p, body.itemId)
     if item is None:
         return error(404, 'Item not found.')
-    if item['category'] not in catalog.CLOTHING + ('bag',):
+    if item['category'] not in YOUCAM_CATEGORY:
         return error(422, 'This kind of item cannot be previewed.')
     gender = (body.gender or config.BAG_GENDER).strip().lower()
     if item['category'] == 'bag' and gender not in GENDERS:
@@ -369,13 +370,14 @@ async def start_preview(pid: str, body: PreviewBody):
     for tid, task in previews.items():
         if task['proposal'] == pid and task['item'] == item['itemId'] and task['status'] in ACTIVE:
             return {'previewId': tid}
+    garment = await garment_image(catalog.find(item['itemId']))
+    if garment is None:
+        return error(503, 'The product photo is unavailable right now. Please try again.')
     if not await jobs.reserve(brief['photoId'], 'preview'):
         return error(429, 'Generation limit reached for this session or day.')
     tid = ident()
     previews[tid] = task = record(status='queued', kind='preview', proposal=pid, item=item['itemId'], category=item['category'])
-    garment = catalog.image_file(catalog.find(p['storeId'], item['itemId'])).read_bytes()
-    category = {'outer': 'outer', 'bag': 'bag'}.get(item['category'], 'upper_body')
-    jobs.start(task, key, session=brief['photoId'], photo=photo['data'], reference=garment, category=category, gender=gender)
+    jobs.start(task, key, session=brief['photoId'], photo=photo['data'], reference=garment, category=YOUCAM_CATEGORY[item['category']], gender=gender)
     return {'previewId': tid}
 
 
@@ -403,8 +405,8 @@ async def start_video(pid: str, body: VideoBody):
     if body.duration != 5 or body.resolution != '480':
         return error(422, 'Use a 5-second video at 480p.')
     preview = get(previews, body.previewId)
-    # The video is made from the outfit's main piece; a bag preview restages the shopper in a new scene.
-    if preview is None or preview['proposal'] != pid or preview['status'] != 'success' or item_of(p, preview['item']) is None or preview['category'] not in catalog.CLOTHING:
+    # The video is made from a clothing try-on; a bag preview restages the shopper in a new scene.
+    if preview is None or preview['proposal'] != pid or preview['status'] != 'success' or item_of(p, preview['item']) is None or preview['category'] not in VIDEO_SOURCES:
         return error(409, 'Generate a current preview for this proposal first.')
     key = os.getenv('YOUCAM_API_KEY')
     if not key:

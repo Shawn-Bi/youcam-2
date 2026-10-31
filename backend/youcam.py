@@ -115,7 +115,7 @@ class YouCam:
         return data
 
     async def create_cloth(self, source_file_id, reference_file_id, category):
-        if category not in ('upper_body', 'outer'):
+        if category not in ('upper_body', 'outer', 'lower_body'):
             raise YouCamError('Unsupported garment category.', code='category')
         result = await self.request('POST', CLOTH, json={'src_file_id': source_file_id, 'ref_file_id': reference_file_id, 'garment_category': category})
         return self.task_id(result)

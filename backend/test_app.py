@@ -1,17 +1,21 @@
 from io import BytesIO
+from types import SimpleNamespace
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
 import app as module
+import catalog
 from app import app
 from jobs import Jobs
 
 client = TestClient(app)
-BRIEF = 'silver and black concert look'
+BRIEF = 'Silver-and-black concert look, under $120. Keep my boots.'
 PROPOSAL_KEYS = {'id', 'storeId', 'storeName', 'items', 'kept', 'subtotal', 'rationale', 'version', 'selected'}
 ITEM_KEYS = {'itemId', 'name', 'category', 'price', 'size', 'sizesInStock', 'imageUrl', 'productUrl', 'locked'}
+STORES = ['northline', 'mono-studio', 'sol-social', 'haven']
 
 
 @pytest.fixture(autouse=True)
@@ -44,14 +48,19 @@ def upload(data=None, consent='true', name='photo.png'):
     return client.post('/api/photos', data={'consent': consent}, files={'photo': (name, data or picture(), 'image/png')})
 
 
-def new_brief(text=BRIEF, budget=120, size='M', **extra):
+def new_brief(text=BRIEF, budget=120, size='M', bottom=None, **extra):
     photo = upload().json()['photoId']
-    body = {'photoId': photo, 'text': text, 'budget': budget, 'occasion': 'concert', 'sizes': {'top': size}, 'keep': ['boots'], **extra}
+    sizes = {'top': size, **({'bottom': bottom} if bottom else {})}
+    body = {'photoId': photo, 'text': text, 'budget': budget, 'sizes': sizes, 'keep': ['boots'], **extra}
     return client.post('/api/briefs', json=body)
 
 
 def proposal(index=0, **kwargs):
     return new_brief(**kwargs).json()['proposals'][index]
+
+
+def by_store(response, store_id):
+    return next(p for p in response.json()['proposals'] if p['storeId'] == store_id)
 
 
 # --- photos ---------------------------------------------------------------------------
@@ -97,20 +106,24 @@ def test_large_photo_is_downscaled_and_alpha_flattened():
 
 # --- briefs ---------------------------------------------------------------------------
 
-def test_brief_returns_contract_shaped_proposals_from_two_different_stores():
+def test_brief_returns_four_contract_shaped_proposals_from_the_shared_catalog():
     data = new_brief().json()
-    north, mono = data['proposals']
-    assert [p['storeId'] for p in data['proposals']] == ['northline', 'mono-studio']
-    for p, names, total in ((north, ['Chrome bomber', 'Disc crossbody bag'], 114), (mono, ['Shine zip jacket', 'Nova chain bag'], 108)):
+    assert [p['storeId'] for p in data['proposals']] == STORES
+    expected = {
+        'northline': (['Racer leather jacket', 'Luna shoulder bag'], 114), 'mono-studio': (['Shine zip jacket', 'Nova chain bag'], 108),
+        'sol-social': (['Silver sequin tank', 'Disco ball bag'], 70), 'haven': (['Quilted liner jacket', 'Canvas sling bag'], 112),
+    }
+    for p in data['proposals']:
+        names, total = expected[p['storeId']]
         assert set(p) == PROPOSAL_KEYS and p['version'] == 1 and p['selected'] is False and p['kept'] == ['boots']
         assert [i['name'] for i in p['items']] == names and p['subtotal'] == total
         for item in p['items']:
             assert set(item) == ITEM_KEYS and item['locked'] is False
-            assert item['productUrl'].startswith(('http://', 'https://')) and item['imageUrl'].endswith('.png')
+            assert item['imageUrl'] == f"/catalog/{item['itemId']}.jpg" and item['productUrl'] == f"/products/{item['itemId']}"
         assert p['items'][0]['size'] == 'M' and p['items'][1]['size'] is None
 
 
-def test_occasion_is_optional():
+def test_occasion_is_optional_and_sizes_are_case_insensitive():
     photo = upload().json()['photoId']
     response = client.post('/api/briefs', json={'photoId': photo, 'text': BRIEF, 'budget': 120, 'sizes': {'top': 'm'}, 'keep': []})
     assert response.status_code == 200
@@ -126,8 +139,8 @@ def test_brief_errors_use_the_field_names_the_frontend_reads():
     }
     response = client.post('/api/briefs', json={'budget': 'bad'})
     assert response.status_code == 422 and response.json()['errors'] == {'budget': 'Enter a budget in dollars.'}
-    response = client.post('/api/briefs', json={'photoId': 'x', 'text': 'a', 'budget': 5, 'sizes': {'top': 'HUGE'}})
-    assert response.json()['errors']['topSize'] == 'Choose your top or jacket size.'
+    response = client.post('/api/briefs', json={'photoId': 'x', 'text': 'a', 'budget': 5, 'sizes': {'top': 'HUGE', 'bottom': 'HUGE'}})
+    assert response.json()['errors']['topSize'] == 'Choose your top or jacket size.' and 'bottomSize' in response.json()['errors']
     assert client.post('/api/briefs', json={'photoId': 'x', 'text': 'a' * 1001, 'budget': 5, 'sizes': {'top': 'M'}}).json()['errors']['text'].startswith('Keep the description')
 
 
@@ -135,6 +148,31 @@ def test_over_budget_store_returns_an_empty_proposal_with_a_reason():
     p = proposal(budget=20)
     assert p['items'] == [] and p['subtotal'] == 0 and p['rationale'] == 'Nothing in size M came in under $20.'
     assert client.post(f"/api/proposals/{p['id']}/select").status_code == 409
+
+
+def test_a_brief_naming_a_catalog_piece_is_built_around_it_in_that_store_only():
+    response = new_brief(text='Build a look around the Grey knit sweater from Mono Studio.', budget=150)
+    mono = by_store(response, 'mono-studio')
+    assert [i['itemId'] for i in mono['items']][0] == 'ms_knit_sweater' and mono['rationale'].startswith('Built around the Grey knit sweater')
+    for store_id in ('northline', 'sol-social', 'haven'):
+        assert 'ms_knit_sweater' not in [i['itemId'] for i in by_store(response, store_id)['items']]
+
+
+def test_an_item_id_on_the_brief_picks_the_piece_and_bottoms_use_the_bottoms_size():
+    response = new_brief(text='a work look', budget=300, size='XS', bottom='L', itemId='ms_pleat_trouser')
+    mono = by_store(response, 'mono-studio')
+    categories = [i['category'] for i in mono['items']]
+    assert categories[0] in ('top', 'outer') and categories[1] == 'bottom' and 'ms_pleat_trouser' in [i['itemId'] for i in mono['items']]
+    trouser = next(i for i in mono['items'] if i['itemId'] == 'ms_pleat_trouser')
+    assert trouser['size'] == 'L' and mono['items'][0]['size'] == 'XS'
+    assert new_brief(text='a look', itemId='nope').status_code == 200  # an unknown piece is ignored
+
+
+def test_replacing_the_picked_piece_drops_the_built_around_note():
+    response = new_brief(text='Build a look around the Grey knit sweater from Mono Studio.', budget=150)
+    mono = by_store(response, 'mono-studio')
+    replaced = client.post(f"/api/proposals/{mono['id']}/replace", json={'itemId': 'ms_knit_sweater'}).json()
+    assert 'ms_knit_sweater' not in [i['itemId'] for i in replaced['items']] and not replaced['rationale'].startswith('Built around')
 
 
 # --- revising -------------------------------------------------------------------------
@@ -153,16 +191,16 @@ def test_size_change_in_stock_keeps_the_preview_valid(youcam):
 
 def test_out_of_stock_size_returns_alternatives_in_that_size():
     p = proposal(budget=200)
-    chrome = p['items'][0]
-    assert chrome['itemId'] == 'northline_chrome' and chrome['sizesInStock'] == ['M', 'L', 'XL']
-    url = f"/api/proposals/{p['id']}/items/{chrome['itemId']}"
-    response = client.patch(url, json={'size': 'XXL'})
+    racer = p['items'][0]
+    assert racer['itemId'] == 'nl_racer_jacket' and racer['sizesInStock'] == ['S', 'M', 'L']
+    url = f"/api/proposals/{p['id']}/items/{racer['itemId']}"
+    response = client.patch(url, json={'size': 'XXXL'})
     assert response.status_code == 409 and response.json() == {'code': 'out_of_stock', 'alternatives': []}
-    response = client.patch(url, json={'size': 'S'})
+    response = client.patch(url, json={'size': 'XL'})
     assert response.status_code == 409 and response.json()['code'] == 'out_of_stock'
     alternatives = response.json()['alternatives']
-    assert {a['itemId'] for a in alternatives} == {'northline_racer', 'northline_vinyl'}
-    assert all(set(a) == ITEM_KEYS and a['size'] == 'S' and 'S' in a['sizesInStock'] and a['category'] == 'outer' for a in alternatives)
+    assert [a['itemId'] for a in alternatives] == ['nl_chrome_bomber']
+    assert all(set(a) == ITEM_KEYS and a['size'] == 'XL' and 'XL' in a['sizesInStock'] and a['category'] == 'outer' for a in alternatives)
     assert module.proposals[p['id']]['version'] == 1  # a refused change leaves the proposal alone
 
 
@@ -183,8 +221,8 @@ def test_replace_gives_a_new_item_id_and_recomputes_the_subtotal():
     response = client.post(f"/api/proposals/{p['id']}/replace", json={'itemId': old['itemId']})
     assert response.status_code == 200
     new = response.json()
-    assert new['version'] == 2 and new['items'][0]['itemId'] != old['itemId'] and new['items'][0]['category'] == old['category']
-    assert new['subtotal'] == sum(i['price'] for i in new['items']) <= 150 and old['name'] not in new['rationale']
+    assert new['version'] == 2 and new['items'][0]['itemId'] == 'nl_chrome_bomber' and new['items'][0]['category'] == old['category']
+    assert new['subtotal'] == sum(i['price'] for i in new['items']) == 119 and old['name'] not in new['rationale']
     assert [i['itemId'] for i in new['items'][1:]] == [i['itemId'] for i in p['items'][1:]]
 
 
@@ -192,14 +230,14 @@ def test_replace_honors_the_instruction_and_refuses_locked_items():
     p = proposal(budget=150)
     jacket = p['items'][0]
     cheaper = client.post(f"/api/proposals/{p['id']}/replace", json={'itemId': jacket['itemId'], 'instruction': 'cheaper'}).json()
-    assert cheaper['items'][0]['price'] < jacket['price']
+    assert cheaper['items'][0]['itemId'] == 'nl_vinyl_jacket' and cheaper['items'][0]['price'] < jacket['price']
     client.patch(f"/api/proposals/{p['id']}/items/{cheaper['items'][0]['itemId']}", json={'locked': True})
     assert client.post(f"/api/proposals/{p['id']}/replace", json={'itemId': cheaper['items'][0]['itemId']}).status_code == 409
 
 
 def test_replace_without_an_option_is_a_conflict():
-    p = proposal(budget=27, size='XS')
-    assert [i['name'] for i in p['items']] == ['Red rib tank']
+    p = proposal(budget=34, size='XS')
+    assert [i['name'] for i in p['items']] == ['Chrome cowl cami']
     response = client.post(f"/api/proposals/{p['id']}/replace", json={'itemId': p['items'][0]['itemId']})
     assert response.status_code == 409 and response.json() == {'error': 'No replacement fits the size and budget.'}
     assert client.post(f"/api/proposals/{p['id']}/replace", json={'itemId': 'missing'}).status_code == 404
@@ -208,10 +246,10 @@ def test_replace_without_an_option_is_a_conflict():
 
 def test_select_marks_exactly_one_proposal_of_the_brief():
     data = new_brief().json()
-    first, second = data['proposals']
+    first, second = data['proposals'][:2]
     assert client.post(f"/api/proposals/{first['id']}/select").json()['selected'] is True
     assert client.post(f"/api/proposals/{second['id']}/select").json()['selected'] is True
-    assert [module.proposals[p['id']]['selected'] for p in data['proposals']] == [False, True]
+    assert [module.proposals[p['id']]['selected'] for p in data['proposals']] == [False, True, False, False]
     assert client.post('/api/proposals/nope/select').status_code == 404
 
 
@@ -228,46 +266,26 @@ def test_previews_need_a_key_and_a_known_item(monkeypatch):
     assert client.post('/api/proposals/nope/previews', json={'itemId': 'x'}).status_code == 404
 
 
-def test_bag_preview_uses_bag_try_on_and_cannot_feed_a_video(youcam):
-    p = proposal()
-    jacket, bag = p['items']
-    base = f"/api/proposals/{p['id']}"
-    bag_preview = client.post(base + '/previews', json={'itemId': bag['itemId']})
-    assert bag_preview.status_code == 200
-    job = youcam[-1]
-    assert job['category'] == 'bag' and job['gender'] == 'female' and job['reference'].startswith(b'\x89PNG')
-    assert client.get('/api/previews/' + bag_preview.json()['previewId']).json()['status'] == 'success'
-    client.post(base + '/select')
-    body = {'previewId': bag_preview.json()['previewId'], 'duration': 5, 'resolution': '480'}
-    assert client.post(base + '/videos', json=body).status_code == 409
-    jacket_preview = client.post(base + '/previews', json={'itemId': jacket['itemId']}).json()['previewId']
-    assert youcam[-1]['category'] == 'outer'
-    assert client.post(base + '/videos', json={**body, 'previewId': jacket_preview}).status_code == 200
-
-
-def test_bag_gender_can_be_chosen_per_request_and_is_validated(youcam):
-    p = proposal()
-    bag = p['items'][1]
-    base = f"/api/proposals/{p['id']}"
-    bad = client.post(base + '/previews', json={'itemId': bag['itemId'], 'gender': 'robot'})
-    assert bad.status_code == 422 and list(bad.json()['errors']) == ['gender']
-    assert not youcam
-    assert client.post(base + '/previews', json={'itemId': bag['itemId'], 'gender': ' Male '}).status_code == 200
-    assert youcam[-1]['gender'] == 'male'
-    jacket = p['items'][0]
-    assert client.post(base + '/previews', json={'itemId': jacket['itemId'], 'gender': 'robot'}).status_code == 200
-
-
-def test_preview_sends_the_stored_photo_and_the_garment_image(youcam):
+def test_preview_sends_the_stored_photo_and_the_catalog_photo_of_the_garment(youcam):
     p = proposal()
     jacket = p['items'][0]
     response = client.post(f"/api/proposals/{p['id']}/previews", json={'itemId': jacket['itemId']})
     assert response.status_code == 200
     job = youcam[0]
     assert jacket['category'] == 'outer' and job['category'] == 'outer'
-    assert job['photo'].startswith(b'\xff\xd8\xff') and job['reference'].startswith(b'\x89PNG') and job['session']
+    assert job['photo'].startswith(b'\xff\xd8\xff') and job['reference'] == catalog.image_file(catalog.find(jacket['itemId'])).read_bytes() and job['session']
     assert client.get('/api/previews/' + response.json()['previewId']).json() == {'status': 'success', 'imageUrl': 'https://example.com/preview'}
     assert client.get('/api/previews/nope').status_code == 404
+
+
+def test_each_category_is_sent_to_youcam_in_its_own_way(youcam):
+    p = by_store(new_brief(text='a look around the Pleated grey trousers', budget=300, itemId='ms_pleat_trouser'), 'mono-studio')
+    base = f"/api/proposals/{p['id']}"
+    sent = {}
+    for item in p['items']:
+        assert client.post(base + '/previews', json={'itemId': item['itemId']}).status_code == 200
+        sent[item['category']] = youcam[-1]['category']
+    assert sent['bottom'] == 'lower_body' and sent['bag'] == 'bag' and sent[p['items'][0]['category']] in ('upper_body', 'outer')
 
 
 def test_preview_is_reused_while_active_and_retried_after_failure(youcam):
@@ -291,6 +309,36 @@ def test_replaced_item_needs_its_own_preview_and_invalidates_the_video(youcam):
     assert client.post(base + '/videos', json=video_body).status_code == 200
     client.post(base + '/replace', json={'itemId': old['itemId']})
     assert client.post(base + '/videos', json=video_body).status_code == 409
+
+
+def test_bag_preview_uses_bag_try_on_and_cannot_feed_a_video(youcam):
+    p = proposal()
+    jacket, bag = p['items']
+    base = f"/api/proposals/{p['id']}"
+    bag_preview = client.post(base + '/previews', json={'itemId': bag['itemId']})
+    assert bag_preview.status_code == 200
+    job = youcam[-1]
+    assert job['category'] == 'bag' and job['gender'] == 'female' and job['reference'].startswith(b'\xff\xd8\xff')
+    assert client.get('/api/previews/' + bag_preview.json()['previewId']).json()['status'] == 'success'
+    client.post(base + '/select')
+    body = {'previewId': bag_preview.json()['previewId'], 'duration': 5, 'resolution': '480'}
+    assert client.post(base + '/videos', json=body).status_code == 409
+    jacket_preview = client.post(base + '/previews', json={'itemId': jacket['itemId']}).json()['previewId']
+    assert youcam[-1]['category'] == 'outer'
+    assert client.post(base + '/videos', json={**body, 'previewId': jacket_preview}).status_code == 200
+
+
+def test_bag_gender_can_be_chosen_per_request_and_is_validated(youcam):
+    p = proposal()
+    bag = p['items'][1]
+    base = f"/api/proposals/{p['id']}"
+    bad = client.post(base + '/previews', json={'itemId': bag['itemId'], 'gender': 'robot'})
+    assert bad.status_code == 422 and list(bad.json()['errors']) == ['gender']
+    assert not youcam
+    assert client.post(base + '/previews', json={'itemId': bag['itemId'], 'gender': ' Male '}).status_code == 200
+    assert youcam[-1]['gender'] == 'male'
+    jacket = p['items'][0]
+    assert client.post(base + '/previews', json={'itemId': jacket['itemId'], 'gender': 'robot'}).status_code == 200
 
 
 def test_video_rules(youcam):
@@ -353,17 +401,44 @@ def test_idle_sessions_expire_but_active_ones_do_not():
     assert idle['id'] not in module.proposals and active['id'] in module.proposals
 
 
+# --- product photos ----------------------------------------------------------------------
+
+def fake_frontend(monkeypatch, status):
+    """Pretend the repo's product photos are not on disk, and the live frontend answers with `status`."""
+    seen = []
+    real = httpx.AsyncClient
+
+    def handle(request):
+        seen.append(str(request.url))
+        return httpx.Response(status, content=b'\xff\xd8\xff\xe0frontend-photo')
+
+    monkeypatch.setattr(catalog, 'PUBLIC_DIR', catalog.PUBLIC_DIR / 'nowhere')
+    monkeypatch.setattr(module, 'httpx', SimpleNamespace(AsyncClient=lambda **kw: real(transport=httpx.MockTransport(handle), **kw), HTTPError=httpx.HTTPError))
+    return seen
+
+
+def test_product_photo_falls_back_to_the_live_frontend(youcam, monkeypatch):
+    p = proposal()
+    seen = fake_frontend(monkeypatch, 200)
+    assert client.post(f"/api/proposals/{p['id']}/previews", json={'itemId': p['items'][0]['itemId']}).status_code == 200
+    assert seen == ['https://look-exchange.vercel.app/catalog/nl_racer_jacket.jpg'] and youcam[-1]['reference'].endswith(b'frontend-photo')
+
+
+def test_an_unavailable_product_photo_is_a_clear_error_and_costs_no_slot(youcam, monkeypatch):
+    p = proposal()
+    fake_frontend(monkeypatch, 404)
+    response = client.post(f"/api/proposals/{p['id']}/previews", json={'itemId': p['items'][0]['itemId']})
+    assert response.status_code == 503 and 'photo' in response.json()['error'] and not youcam
+    assert not module.jobs.counts
+
+
 # --- static pieces ---------------------------------------------------------------------
 
-def test_health_catalog_product_pages_and_assets():
-    assert client.get('/api/health').json() == {'status': 'ok', 'youcamConfigured': False}
-    catalog_response = client.get('/api/catalogs/northline').json()
-    assert len(catalog_response['items']) == 10 and all(set(i) == ITEM_KEYS for i in catalog_response['items'])
-    image = client.get(catalog_response['items'][0]['imageUrl'].replace('http://localhost:8000', ''))
-    assert image.status_code == 200 and image.headers['content-type'] == 'image/png'
-    page = client.get(f"/shop/northline/{catalog_response['items'][0]['itemId']}")
-    assert page.status_code == 200 and 'Racer zip jacket' in page.text and 'sample store' in page.text
-    assert client.get('/shop/northline/missing').status_code == 404
+def test_health_and_catalog_endpoints():
+    assert client.get('/api/health').json() == {'status': 'ok', 'youcamConfigured': False, 'catalogItems': 48}
+    listing = client.get('/api/catalogs/sol-social').json()
+    assert listing['storeId'] == 'sol-social' and len(listing['items']) == 12
+    assert all(set(i) == ITEM_KEYS and i['imageUrl'].startswith('/catalog/') for i in listing['items'])
     assert client.get('/api/catalogs/nope').status_code == 404
 
 

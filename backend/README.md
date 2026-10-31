@@ -19,25 +19,29 @@ Copy `.env.example` to `.env` (git-ignored) or set the variables on the hosting 
 | --- | --- |
 | `YOUCAM_API_KEY` | YouCam key. Without it previews and videos return 503. Never commit it. |
 | `FRONTEND_ORIGINS` | Comma-separated exact frontend origins, no trailing slash. Default `http://localhost:3000`. |
-| `FRONTEND_ORIGIN_REGEX` | Optional pattern for preview deployments, for example `https://youcam-.*\.vercel\.app`. |
-| `PUBLIC_BASE_URL` | Public backend origin used in item image and product links. Falls back to Render's `RENDER_EXTERNAL_URL`, then `http://localhost:8000`. |
+| `FRONTEND_ORIGIN_REGEX` | Optional pattern for preview deployments, for example `https://look-exchange(-.*)?\.vercel\.app`. |
+| `FRONTEND_PUBLIC_URL` | The live frontend, used only to download a product photo when the repo's copy is not on disk. Default `https://look-exchange.vercel.app`. |
+| `CATALOG_FILE` | Optional path to a catalog file. Default is the shared `frontend/data/catalog.json`. |
 | `BAG_GENDER` | `female` or `male`, used for bag try-on when the request does not say. Default `female`. |
 | `SESSION_PREVIEW_LIMIT`, `SESSION_VIDEO_LIMIT`, `DAILY_TASK_LIMIT`, `DAILY_VIDEO_LIMIT` | Unit guards, see below. Defaults 6, 2, 40, 10. |
 | `SESSION_PREVIEW_ATTEMPTS`, `SESSION_VIDEO_ATTEMPTS`, `DAILY_ATTEMPT_LIMIT` | Hard caps on tries including failed ones. Defaults 12, 4, 150. |
 
-`GET /api/health` returns `{"status":"ok","youcamConfigured":true|false}`.
+`GET /api/health` returns `{"status":"ok","youcamConfigured":true|false,"catalogItems":48}`.
 
 ## API
 
 Routes follow the shared contract in `docs/look-exchange-prd.md` section 6 and the integration notes in `docs/backend-prd-zh.md` section 5.1.
 
 - Uploaded photos are decoded, rotated upright, stripped of metadata (including location), flattened to RGB and capped at 2048 px, then kept as JPEG for one hour. Photos under 512 px, wider than 2.5:1, or over 10 MB are refused with `422 {"errors":{"photo":…}}`.
-- Proposals are built by rules in `catalog.py`, never by a model: items in the shopper's size, within budget, scored by style tags in the brief. Each store has its own catalog, so the two proposals differ.
-- Previews upload the shopper's photo and the product illustration to YouCam and run clothes try-on V4 (`upper_body` for tops, `outer` for jackets), or bag try-on for bags. Bag try-on needs a gender: `BAG_GENDER` (default `female`) applies unless the request adds an optional `"gender": "female" | "male"`. YouCam restages the shopper in a new scene for bags, so a bag preview cannot be used to make a video.
-- Videos are 5 seconds at 480p. They require a selected proposal and a successful preview of an item that is still in it. The try-on result is downloaded and re-uploaded to YouCam, with the result URL as a fallback.
+- **Catalog:** the four stores and their 48 products come from the shared `frontend/data/catalog.json`, which Dennis owns. `imageUrl` and `productUrl` are returned as written (relative paths), so the frontend resolves them. Product photos come from `frontend/public/catalog/`.
+- **Proposals** are built by rules in `catalog.py`, never by a model. Each of the four stores answers every brief with an upper piece (top or jacket) and an optional bag, in the shopper's size and budget, scored by style tags and colors found in the brief. Bottoms use `sizes.bottom` when given, otherwise the top size, and appear only when a brief is built around them.
+- **Built around a piece:** if the brief carries an optional `itemId`, or its text names a catalog product ("Build a look around the Grey knit sweater from Mono Studio."), the store that sells it must include it when it comes in the shopper's size. It takes over its slot (a top and a jacket share one; bottoms and bags each have their own) and the other stores answer as usual. A bag alone is never a look.
+- **Revise:** lock, change size (409 `out_of_stock` with alternatives), replace (new `itemId`, optional instruction such as "cheaper" or a color), select a store.
+- Previews upload the shopper's photo and the product photo to YouCam and run clothes try-on V4 (`upper_body` for tops, `outer` for jackets, `lower_body` for bottoms), or bag try-on for bags. Bag try-on needs a gender: `BAG_GENDER` applies unless the request adds an optional `"gender": "female" | "male"`. YouCam restages the shopper in a new scene for bags, so a bag preview cannot be used to make a video.
+- Videos are 5 seconds at 480p. They require a selected proposal and a successful clothing preview of an item that is still in it. The try-on result is downloaded and re-uploaded to YouCam, with the result URL as a fallback.
 - A size change does not invalidate a preview: try-on shows appearance only. Replacing an item gives it a new `itemId`, which needs its own preview.
 - Task records live for an hour after last use, so a client can poll the same `previewId` or `videoId` again without paying for a new task.
-- `GET /shop/{storeId}/{itemId}` is the sample product page that `productUrl` points to.
+- Errors other than field validation are `{"error": "plain English"}`; the frontend shows them to shoppers as written.
 
 ## Measured with the real API (2026-10-30)
 
@@ -45,12 +49,8 @@ One clothes try-on (`outer`, full-body photo) took about 13 seconds and cost 2 u
 
 ## Unit guards
 
-YouCam charges only for successful tasks. A session is one uploaded photo. Per session the defaults allow 6 running or successful try-ons and 2 videos; a failed task gives its slot back, while the attempt caps still bound retries. Per UTC day the defaults allow 40 tasks and 10 videos. Limits reset when the server restarts and a new upload starts a new session, so they are a guard rail, not abuse prevention.
-
-## Sample catalogs
-
-`catalogs/*.json` and `static/products/*.png` are generated by `tools/make_catalog.py`. The two stores and every item are samples for the demo; nothing can be bought. The illustrations are original artwork, not photographs of real merchandise. Edit the specs in the script and run `python tools/make_catalog.py` to change them.
+YouCam charges only for successful tasks. A session is one uploaded photo. Per session the defaults allow 6 running or successful previews and 2 videos; a failed task gives its slot back, while the attempt caps still bound retries. Per UTC day the defaults allow 40 tasks and 10 videos. Limits reset when the server restarts and a new upload starts a new session, so they are a guard rail, not abuse prevention.
 
 ## Limitations
 
-Session data lives in memory and is lost on restart. `render.yaml` is a proposed Render free-service configuration; free services sleep after idle time and lose state when they do.
+Session data lives in memory and is lost on restart. `render.yaml` is a proposed Render free-service configuration; free services sleep after idle time and lose state when they do. The Render service builds from the whole repository, so `frontend/data/catalog.json` is available at runtime.

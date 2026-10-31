@@ -32,8 +32,8 @@ def int_env(name, default):
 
 load_env()
 
-# Where browsers and YouCam reach this server. Render sets RENDER_EXTERNAL_URL itself.
-PUBLIC_BASE_URL = (os.getenv('PUBLIC_BASE_URL') or os.getenv('RENDER_EXTERNAL_URL') or 'http://localhost:8000').rstrip('/')
+# The live frontend serves the product photos too; used only if the repo's copy is not on disk.
+FRONTEND_PUBLIC_URL = os.getenv('FRONTEND_PUBLIC_URL', 'https://look-exchange.vercel.app').rstrip('/')
 FRONTEND_ORIGINS = [x.strip().rstrip('/') for x in os.getenv('FRONTEND_ORIGINS', 'http://localhost:3000').split(',') if x.strip()]
 FRONTEND_ORIGIN_REGEX = os.getenv('FRONTEND_ORIGIN_REGEX') or None
 # YouCam's bag try-on requires a gender and the brief form does not ask for one.
