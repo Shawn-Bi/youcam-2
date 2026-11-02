@@ -1,7 +1,7 @@
 // Shapes from the shared API contract (docs/look-exchange-prd.md, section 6).
 // Change these only together with the backend.
 
-export type TaskStatus = "queued" | "running" | "success" | "failed";
+export type TaskStatus = "queued" | "running" | "success" | "failed" | "uncertain";
 
 export type Category = "top" | "outer" | "bottom" | "bag";
 
@@ -51,4 +51,6 @@ export type TaskResult = {
   imageUrl?: string;
   videoUrl?: string;
   error?: string;
+  phase?: string;
+  elapsedSeconds?: number;
 };

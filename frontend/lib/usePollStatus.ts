@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ApiError } from "./errors";
 import type { TaskResult } from "./types";
 
-export type PollState = TaskResult | { status: "timeout" };
+export type PollState = TaskResult | { status: "timeout" | "unavailable"; error?: string; phase?: string; elapsedSeconds?: number };
 
 type Options = {
   /** Give up after this long and report "timeout". */
@@ -46,24 +46,29 @@ export function usePollStatus(
 
     const tick = async () => {
       const elapsed = Date.now() - startedAt;
-      if (elapsed >= timeoutMs) {
-        if (!cancelled) setState({ status: "timeout" });
-        return;
-      }
       let result: TaskResult;
       try {
         result = await fetchRef.current(id);
       } catch (err) {
-        // A dropped connection is not a failed task, so keep polling until the timeout.
-        // Any other backend error (unknown task, server failure) ends polling.
-        result =
-          err instanceof ApiError && !err.network
-            ? { status: "failed", error: err.message }
-            : { status: "running" };
+        // Status-read errors never prove that generation failed. Never offer a paid retry here.
+        if (err instanceof ApiError && !err.network && err.status && err.status < 500 && err.status !== 429) {
+          if (!cancelled) setState({ status: "unavailable", error: "We cannot retrieve this task right now. Your session may have expired. Starting over could create another charge." });
+          return;
+        }
+        result = { status: "running" };
       }
       if (cancelled) return;
-      setState(result);
-      if (result.status === "success" || result.status === "failed") return;
+      const elapsedSeconds = Math.max(Math.floor((Date.now() - startedAt) / 1000), result.elapsedSeconds ?? 0);
+      setState({ ...result, elapsedSeconds });
+      if (result.status === "success" || result.status === "failed" || result.status === "uncertain") {
+        console.info("Look Exchange timing", { phase: "generation_observed", outcome: result.status, elapsedSeconds });
+        return;
+      }
+      // Read once at the boundary before declaring the browser's waiting window over.
+      if (Date.now() - startedAt >= timeoutMs) {
+        setState({ status: "timeout", elapsedSeconds });
+        return;
+      }
       timer = setTimeout(tick, elapsed > SLOW_AFTER_MS ? SLOW_MS : FAST_MS);
     };
 

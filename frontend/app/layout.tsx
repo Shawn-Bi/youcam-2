@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
 import { Header } from "@/components/Header";
+import { BackendWarmup } from "@/components/BackendWarmup";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${fraunces.variable} ${dmSans.variable} antialiased`}>
         <Header />
+        <BackendWarmup />
         {children}
       </body>
     </html>

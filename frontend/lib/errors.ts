@@ -5,6 +5,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public network = false,
+    public status?: number,
   ) {
     super(message);
   }

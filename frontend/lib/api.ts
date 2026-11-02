@@ -15,19 +15,42 @@ const json = (body: unknown): RequestInit => ({
 });
 
 async function request<T>(path: string, init: RequestInit): Promise<T> {
+  const started = performance.now();
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}${path}`, init);
+    res = await fetch(`${BASE_URL}${path}`, {
+      ...init, ...(init.method === "GET" ? { signal: AbortSignal.timeout(15_000) } : {}),
+    });
   } catch {
+    console.info("Look Exchange timing", { phase: "backend_request_unconfirmed", action: path.split("/")[2], elapsedMs: Math.round(performance.now() - started) });
     throw new ApiError("We couldn't reach Look Exchange. Check your connection and try again.", true);
   }
+  console.info("Look Exchange timing", { phase: "backend_response", action: path.split("/")[2], status: res.status, elapsedMs: Math.round(performance.now() - started) });
   if (res.ok) return res.json() as Promise<T>;
   const body = (await res.json().catch(() => null)) ?? {};
   if (res.status === 422 && body.errors) throw new ValidationError(body.errors);
   if (res.status === 409 && body.code === "out_of_stock") throw new OutOfStockError(body.alternatives ?? []);
   // The backend explains other refusals in plain words ("Select this proposal first.",
   // "Generation limit reached…"), so show its message rather than a generic one.
-  throw new ApiError(typeof body.error === "string" ? body.error : "Something went wrong on our side. Try again in a moment.");
+  throw new ApiError(typeof body.error === "string" ? body.error : "Something went wrong on our side. Try again in a moment.", false, res.status);
+}
+
+let warmup: Promise<void> | undefined;
+
+/** One bounded health request per page load; no generation, photo upload or keep-alive loop. */
+export function warmBackend(): Promise<void> {
+  if (USE_MOCKS) return Promise.resolve();
+  return warmup ??= (async () => {
+    const started = performance.now();
+    try {
+      const response = await fetch(`${BASE_URL}/api/health`, {
+        cache: "no-store", signal: AbortSignal.timeout(90_000),
+      });
+      console.info("Look Exchange timing", { phase: "backend_warmup", status: response.status, elapsedMs: Math.round(performance.now() - started) });
+    } catch {
+      console.info("Look Exchange timing", { phase: "backend_warmup_unconfirmed", elapsedMs: Math.round(performance.now() - started) });
+    }
+  })();
 }
 
 export async function uploadPhoto(photo: File): Promise<{ photoId: string }> {

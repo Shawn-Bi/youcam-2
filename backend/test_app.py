@@ -490,4 +490,3 @@ def test_cors_allows_the_frontend_only():
     assert 'PATCH' in allowed.headers['access-control-allow-methods']
     denied = client.options('/api/briefs', headers={'Origin': 'https://evil.example', **ask})
     assert 'access-control-allow-origin' not in denied.headers
-

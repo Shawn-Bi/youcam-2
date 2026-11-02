@@ -250,7 +250,7 @@ export default function PreviewPage({ params }: { params: Promise<{ briefId: str
       </div>
 
       {proposal.selected && videoItem && (
-        <VideoPanel proposal={proposal} previewId={previews[videoItem.itemId] ?? null} itemName={videoItem.name} />
+        <VideoPanel key={`${proposal.id}:${videoItem.itemId}:${previews[videoItem.itemId] ?? "none"}`} proposal={proposal} previewId={previews[videoItem.itemId] ?? null} itemName={videoItem.name} />
       )}
     </main>
   );

@@ -13,6 +13,8 @@ import type { Proposal } from "@/lib/types";
 import { usePollStatus } from "@/lib/usePollStatus";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
+import { PREVIEW_TIMEOUT_MS, VIDEO_TIMEOUT_MS } from "@/lib/generation";
+
 type Saved = { proposal: Proposal; previewId: string | null; videoId: string | null };
 
 export default function SavedPage({ params }: { params: Promise<{ briefId: string; proposalId: string }> }) {
@@ -31,8 +33,9 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
     setSaved({ proposal, previewId, videoId: loadVideo(proposal.id, previewId) });
   }, [briefId, proposalId]);
 
-  const preview = usePollStatus(saved?.previewId ?? null, getPreview, { timeoutMs: 90_000 });
-  const video = usePollStatus(saved?.videoId ?? null, getVideo, { timeoutMs: 4 * 60_000 });
+  const [checkAgain, setCheckAgain] = useState(0);
+  const preview = usePollStatus(saved?.previewId ?? null, getPreview, { timeoutMs: PREVIEW_TIMEOUT_MS, restartKey: checkAgain });
+  const video = usePollStatus(saved?.videoId ?? null, getVideo, { timeoutMs: VIDEO_TIMEOUT_MS, restartKey: checkAgain });
   const reducedMotion = useReducedMotion();
 
   if (saved === undefined) return <main className="mx-auto max-w-page px-4 py-10 md:px-8 lg:px-12" aria-busy="true" />;
@@ -67,6 +70,12 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
         <p className="text-small text-muted">Saved for this session.</p>
       </div>
 
+      {[preview, video].some((task) => task && ["timeout", "uncertain", "unavailable"].includes(task.status)) && (
+        <div role="status" className="flex flex-col items-start gap-2">
+          <p className="text-small text-muted">Some results are not confirmed yet.</p>
+          <button type="button" onClick={() => setCheckAgain((n) => n + 1)} className="min-h-11 text-small font-medium text-sage underline">Check existing tasks again</button>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
         {previewUrl || videoUrl || videoPending ? (
           <div className="grid grid-cols-1 gap-3 self-start sm:grid-cols-2">
@@ -101,7 +110,7 @@ export default function SavedPage({ params }: { params: Promise<{ briefId: strin
           </div>
         ) : (
           <div className="flex flex-col items-start gap-1 self-start rounded-card border border-line bg-surface px-4 py-4">
-            <p className="text-small text-muted">No try-on preview or video for this look.</p>
+            <p className="text-small text-muted">Your try-on results are not available yet.</p>
             <Link
               href={`/proposals/${briefId}/${proposal.id}`}
               className="inline-flex min-h-11 items-center text-small font-medium text-sage underline"

@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
+
 import { getPreview } from "@/lib/api";
+import { useState } from "react";
+import { PREVIEW_TIMEOUT_MS, elapsedLabel, generationProgress } from "@/lib/generation";
 import type { Item } from "@/lib/types";
 import { usePollStatus } from "@/lib/usePollStatus";
 import { ProductImage } from "./ProductImage";
-
-const PREVIEW_TIMEOUT_MS = 90_000;
 
 const outlineButton =
   "min-h-11 rounded-full border border-sage px-6 text-small font-medium text-sage hover:bg-sage-tint hover:text-sage-hover";
@@ -30,7 +32,8 @@ type Props = {
 
 /** The selected item's try-on preview beside its product photo. */
 export function TryOnViewer({ item, previewId, onStart, starting, finished }: Props) {
-  const state = usePollStatus(previewId, getPreview, { timeoutMs: PREVIEW_TIMEOUT_MS });
+  const [checkAgain, setCheckAgain] = useState(0);
+  const state = usePollStatus(previewId, getPreview, { timeoutMs: PREVIEW_TIMEOUT_MS, restartKey: checkAgain });
 
   let tryOn: React.ReactNode;
   if (finished) {
@@ -58,11 +61,17 @@ export function TryOnViewer({ item, previewId, onStart, starting, finished }: Pr
         <FrameLabel ai>AI-generated preview</FrameLabel>
       </>
     );
-  } else if (state?.status === "failed" || state?.status === "timeout" || state?.status === "success") {
+  } else if (state?.status === "uncertain" || state?.status === "unavailable" || state?.status === "timeout") {
+    tryOn = (
+      <div role="status" className="flex flex-col items-center gap-3 px-6 text-center">
+        <p className="text-body text-ink">{state.error ?? "Your preview is taking longer. Check the same task again without starting another generation."}</p>
+        <button type="button" onClick={() => setCheckAgain((n) => n + 1)} className={outlineButton}>Check again</button>
+        {state.status === "unavailable" && <Link href="/brief" className="text-small text-sage underline">Start a new brief (new generation may cost units again)</Link>}
+      </div>
+    );
+  } else if (state?.status === "failed" || state?.status === "success") {
     const message =
-      state.status === "timeout"
-        ? "This preview is taking longer than usual."
-        : state.status === "failed"
+      state.status === "failed"
           ? (state.error ?? "The preview didn't work this time.")
           : "The preview finished but came back empty.";
     tryOn = (
@@ -76,11 +85,11 @@ export function TryOnViewer({ item, previewId, onStart, starting, finished }: Pr
   } else {
     tryOn = (
       <div className="flex w-full max-w-xs flex-col gap-3 px-6 text-center" aria-live="polite">
-        <p className="text-body text-ink">Creating your preview…</p>
+        <p className="text-body text-ink">{generationProgress(state?.phase)}</p>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-sage-tint">
           <div className="h-full w-1/3 animate-pulse rounded-full bg-terracotta" />
         </div>
-        <p className="text-small text-muted">This usually takes under a minute.</p>
+        <p className="text-small text-muted">{elapsedLabel(state?.elapsedSeconds)}. Previews can take several minutes.</p>
       </div>
     );
   }

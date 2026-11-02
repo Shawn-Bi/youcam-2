@@ -32,6 +32,10 @@ Production settings live in the Vercel project, not in a file: `NEXT_PUBLIC_API_
 
 ## Layout
 
+On page arrival, one bounded `/api/health` request starts waking the backend while the shopper browses. It does not block the interface, generate media, retry repeatedly, or keep the server awake indefinitely. Mock mode skips it. Browser-console timing events measure health/request latency and when generation is observed or video becomes playable; they contain no photos, user text, task IDs or signed URLs.
+
+Preview/video status reads allow 195/915 seconds, including grace after the backend's 180/900-second windows. A slow, disconnected or unconfirmed task is checked again using the same ID. Only confirmed generation failure offers regeneration. Unknown/expired tasks do not silently start paid work. In-memory backend state still cannot survive a restart.
+
 - `app/` — routes: `/` (home), `/shop`, `/stores`, `/stores/[storeId]`, `/products/[itemId]`, `/brief`, `/example` (a replay of the first live run: no photo, no API calls), `/proposals/[briefId]` (all four stores' proposals), `/proposals/[briefId]/[proposalId]` (try-on, edit, pick, video), `/saved/[briefId]/[proposalId]`; favicon `icon.svg`
 - `components/` — shop (`ProductCard`, `StoreCard`, `ShopBrowser`, `ProductActions`), brief (`BriefForm`), proposals (`ProposalCard`, `ItemRow`, `TryOnViewer`, `VideoPanel`), `Header`, `ProductImage`
 - `data/catalog.json` — the shared catalog: four sample stores, 48 products; photos in `public/catalog/`

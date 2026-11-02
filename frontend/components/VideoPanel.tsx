@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { ApiError, getPreview, getVideo, startVideo } from "@/lib/api";
 import { loadVideo, saveVideo } from "@/lib/briefStore";
@@ -7,9 +9,7 @@ import type { Proposal } from "@/lib/types";
 import { usePollStatus } from "@/lib/usePollStatus";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import { FrameLabel } from "./TryOnViewer";
-
-const PREVIEW_TIMEOUT_MS = 90_000;
-const VIDEO_TIMEOUT_MS = 4 * 60_000;
+import { PREVIEW_TIMEOUT_MS, VIDEO_TIMEOUT_MS, elapsedLabel, generationProgress } from "@/lib/generation";
 
 type Props = {
   proposal: Proposal;
@@ -26,9 +26,10 @@ export function VideoPanel({ proposal, previewId, itemName, finished }: Props) {
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkAgain, setCheckAgain] = useState(0);
+  const [previewCheck, setPreviewCheck] = useState(0);
   const reducedMotion = useReducedMotion();
   // Each video costs YouCam units, so only a finished preview can be turned into one.
-  const preview = usePollStatus(previewId, getPreview, { timeoutMs: PREVIEW_TIMEOUT_MS });
+  const preview = usePollStatus(previewId, getPreview, { timeoutMs: PREVIEW_TIMEOUT_MS, restartKey: previewCheck });
   const previewReady = preview?.status === "success" && Boolean(preview.imageUrl);
   const video = usePollStatus(videoId, getVideo, { timeoutMs: VIDEO_TIMEOUT_MS, restartKey: checkAgain });
 
@@ -64,6 +65,11 @@ export function VideoPanel({ proposal, previewId, itemName, finished }: Props) {
         loop
         playsInline
         controls
+        onLoadStart={(event) => { event.currentTarget.dataset.loadStarted = String(performance.now()); }}
+        onLoadedData={(event) => console.info("Look Exchange timing", {
+          phase: "video_playback_ready",
+          elapsedMs: Math.round(performance.now() - Number(event.currentTarget.dataset.loadStarted ?? performance.now())),
+        })}
         aria-label={`AI-generated video of ${finished ? "the example shopper" : "you"} in the ${proposal.storeName} look`}
         className="aspect-[3/4] w-full object-cover"
       />
@@ -74,28 +80,33 @@ export function VideoPanel({ proposal, previewId, itemName, finished }: Props) {
   let body: React.ReactNode;
   if (finished) {
     body = player(finished.videoUrl, finished.poster);
-  } else if (!previewId || preview?.status === "failed" || preview?.status === "timeout" || (preview?.status === "success" && !previewReady)) {
+  } else if (video?.status === "success" && video.videoUrl) {
+    body = player(video.videoUrl);
+  } else if (videoId && (video?.status === "timeout" || video?.status === "uncertain" || video?.status === "unavailable")) {
+    body = (
+      <div role="status" className="flex flex-col items-start gap-3">
+        <p className="text-body text-ink">{video.error ?? "The video is taking longer. Your proposal works without it."}</p>
+        <button type="button" onClick={() => setCheckAgain((n) => n + 1)} className={primary}>Check again</button>
+        <p className="text-small text-muted">This checks the same task without starting another generation.</p>
+        {video.status === "unavailable" && <Link href="/brief" className="text-small text-sage underline">Start a new brief (new generation may cost units again)</Link>}
+      </div>
+    );
+  } else if (previewId && (preview?.status === "timeout" || preview?.status === "uncertain" || preview?.status === "unavailable")) {
+    body = <div role="status" className="flex flex-col items-start gap-3">
+      <p className="text-body text-muted">The preview is not confirmed yet. Check it again before making a video.</p>
+      <button type="button" className={primary} onClick={() => setPreviewCheck((n) => n + 1)}>Check preview again</button>
+      {preview.status === "unavailable" && <Link href="/brief" className="text-small text-sage underline">Start a new brief (new generation may cost units again)</Link>}
+    </div>;
+  } else if (!previewId || preview?.status === "failed" || (preview?.status === "success" && !previewReady)) {
     body = <p className="text-body text-muted">Preview the {item} on your photo first, then make a video from it.</p>;
   } else if (!previewReady) {
     body = <p className="text-body text-muted">Your try-on preview is still being made. The video can start once it&apos;s ready.</p>;
   } else if (!videoId) {
     body = (
       <div className="flex flex-col items-start gap-3">
-        <p className="text-body text-ink">A 5-second AI video of your look, made from your try-on preview. It takes about a minute.</p>
+        <p className="text-body text-ink">A 5-second AI video of your look, made from your try-on preview. Generation can take several minutes.</p>
         <button type="button" onClick={generate} disabled={starting} className={primary}>
           {starting ? "Starting…" : "Generate video"}
-        </button>
-      </div>
-    );
-  } else if (video?.status === "success" && video.videoUrl) {
-    body = player(video.videoUrl);
-  } else if (video?.status === "timeout") {
-    // The video may still be rendering: check the same task again instead of paying for a new one.
-    body = (
-      <div role="alert" className="flex flex-col items-start gap-3">
-        <p className="text-body text-ink">The video is taking longer than usual. Your proposal works without it.</p>
-        <button type="button" onClick={() => setCheckAgain((n) => n + 1)} className={primary}>
-          Check again
         </button>
       </div>
     );
@@ -112,11 +123,11 @@ export function VideoPanel({ proposal, previewId, itemName, finished }: Props) {
   } else {
     body = (
       <div className="flex w-full max-w-sm flex-col gap-3" aria-live="polite">
-        <p className="text-body text-ink">Making your video…</p>
+        <p className="text-body text-ink">{generationProgress(video?.phase)}</p>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-sage-tint">
           <div className="h-full w-1/3 animate-pulse rounded-full bg-terracotta" />
         </div>
-        <p className="text-small text-muted">This usually takes about a minute. You can keep editing meanwhile.</p>
+        <p className="text-small text-muted">{elapsedLabel(video?.elapsedSeconds)}. This can take several minutes. You can keep editing meanwhile.</p>
       </div>
     );
   }
