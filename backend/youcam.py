@@ -72,7 +72,9 @@ class YouCam:
             raise YouCamError(GENERIC, code=code or f'http_{exc.response.status_code}', transient=exc.response.status_code in TRANSIENT) from exc
         except (httpx.HTTPError, ValueError) as exc:
             raise YouCamError(GENERIC, code='network', transient=True) from exc
-        if not isinstance(result, dict) or result.get('status', 200) != 200:
+        if not isinstance(result, dict):
+            raise YouCamError(GENERIC, code='task_response', transient=True)
+        if result.get('status', 200) != 200:
             raise YouCamError(GENERIC, code='rejected')
         return result
 
@@ -144,7 +146,10 @@ class YouCam:
     @staticmethod
     def task_id(result):
         try:
-            return result['data']['task_id']
+            task_id = result['data']['task_id']
+            if not isinstance(task_id, str) or not task_id.strip() or '/' in task_id:
+                raise YouCamError(GENERIC, code='task_response')
+            return task_id
         except (KeyError, TypeError) as exc:
             raise YouCamError(GENERIC, code='task_response') from exc
 

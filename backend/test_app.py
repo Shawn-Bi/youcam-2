@@ -1,4 +1,5 @@
 from io import BytesIO
+import asyncio
 from types import SimpleNamespace
 
 import httpx
@@ -432,6 +433,32 @@ def test_an_unavailable_product_photo_is_a_clear_error_and_costs_no_slot(youcam,
     assert not module.jobs.counts
 
 
+def test_concurrent_preview_preparation_creates_only_one_job(youcam, monkeypatch):
+    p = proposal()
+    arrivals = 0
+
+    async def prepare(item):
+        nonlocal arrivals
+        arrivals += 1
+        while arrivals < 2:
+            await asyncio.sleep(0)
+        return b'\xff\xd8\xffphoto'
+
+    def start(task, key, **inputs):
+        task['status'] = 'running'
+        youcam.append(task)
+
+    monkeypatch.setattr(module, 'garment_image', prepare)
+    monkeypatch.setattr(module.jobs, 'start', start)
+
+    async def concurrent():
+        body = module.PreviewBody(itemId=p['items'][0]['itemId'])
+        return await asyncio.gather(module.start_preview(p['id'], body), module.start_preview(p['id'], body))
+
+    first, second = asyncio.run(concurrent())
+    assert first == second and len(youcam) == 1
+
+
 # --- static pieces ---------------------------------------------------------------------
 
 def test_health_and_catalog_endpoints():
@@ -463,3 +490,4 @@ def test_cors_allows_the_frontend_only():
     assert 'PATCH' in allowed.headers['access-control-allow-methods']
     denied = client.options('/api/briefs', headers={'Origin': 'https://evil.example', **ask})
     assert 'access-control-allow-origin' not in denied.headers
+

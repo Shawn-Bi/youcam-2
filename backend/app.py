@@ -71,13 +71,17 @@ app = FastAPI(lifespan=lifespan)
 @app.middleware('http')
 async def request_timing(request, call_next):
     started = time.monotonic()
-    response = await call_next(request)
-    route = request.scope.get('route')
-    # Only route templates: no user inputs, query strings, signed URLs or provider IDs.
-    logging.getLogger('look-exchange').info('request method=%s route=%s status=%s elapsed_ms=%s',
-        request.method, getattr(route, 'path', 'unmatched'), response.status_code,
-        round((time.monotonic() - started) * 1000))
-    return response
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        return response
+    finally:
+        route = request.scope.get('route')
+        # Only route templates: no user inputs, query strings, signed URLs or provider IDs.
+        logging.getLogger('look-exchange').info('request method=%s route=%s status=%s elapsed_ms=%s',
+            request.method, getattr(route, 'path', 'unmatched'), status,
+            round((time.monotonic() - started) * 1000))
 app.add_middleware(
     CORSMiddleware, allow_origins=config.FRONTEND_ORIGINS, allow_origin_regex=config.FRONTEND_ORIGIN_REGEX,
     allow_methods=['GET', 'POST', 'PATCH'], allow_headers=['Content-Type'],
@@ -386,6 +390,10 @@ async def start_preview(pid: str, body: PreviewBody):
     garment = await garment_image(catalog.find(item['itemId']))
     if garment is None:
         return error(503, 'The product photo is unavailable right now. Please try again.')
+    # Photo preparation can yield while another request creates the same job.
+    for tid, task in previews.items():
+        if task['proposal'] == pid and task['item'] == item['itemId'] and task['status'] in ACTIVE:
+            return {'previewId': tid}
     if not await jobs.reserve(brief['photoId'], 'preview'):
         return error(429, 'Generation limit reached for this session or day.')
     tid = ident()

@@ -10,6 +10,19 @@ PNG = b'\x89PNG\r\n\x1a\n' + b'0' * 20
 JPEG = b'\xff\xd8\xff\xe0' + b'0' * 20
 
 
+@pytest.mark.parametrize('task_id', [None, '', ' ', 42, 'bad/id'])
+def test_invalid_submission_id_remains_ambiguous(task_id):
+    with pytest.raises(YouCamError) as caught:
+        YouCam.task_id({'data': {'task_id': task_id}})
+    assert caught.value.code == 'task_response'
+
+
+def test_non_object_submission_response_is_ambiguous():
+    with pytest.raises(YouCamError) as caught:
+        run(lambda request: httpx.Response(200, json=[]), lambda api: api.create_video(source_url='https://example.com/photo'))
+    assert caught.value.code == 'task_response'
+
+
 def run(handler, work):
     async def go():
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
