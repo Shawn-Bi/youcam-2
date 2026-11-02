@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ApiError, ValidationError, createBrief, uploadPhoto } from "@/lib/api";
 import { loadLatestBrief, saveBrief } from "@/lib/briefStore";
 import { SIZES, getCatalogItem, getStore } from "@/lib/catalog";
+import { ProductImage } from "./ProductImage";
+import { formatPrice } from "@/lib/format";
 import { parseBrief } from "@/lib/parseBrief";
 import type { BriefInput, FieldErrors } from "@/lib/types";
 
@@ -16,10 +18,6 @@ const PHOTO_TYPES = ["image/jpeg", "image/png"];
 
 const inputClass =
   "w-full rounded-field border border-line bg-surface px-5 py-4 text-body text-ink placeholder:text-muted";
-// Short screens (laptops) get one step smaller text so the whole brief fits without scrolling.
-// Tailwind only builds classes written out in full, so the short-screen variants are spelled out.
-const labelClass =
-  "font-display text-h2 font-medium text-ink [@media(max-height:820px)]:text-[22px] [@media(max-height:820px)]:leading-7";
 const smallLabel = "text-body font-medium text-ink";
 
 function FieldError({ id, message }: { id: string; message?: string }) {
@@ -137,6 +135,7 @@ export function BriefForm() {
       return;
     }
     setPhoto(file);
+    setConsent(false);
   }
 
   function addKeep() {
@@ -198,173 +197,89 @@ export function BriefForm() {
   const id = (name: string) => `${uid}-${name}`;
   const describedBy = (name: string) => (errors[name] ? id(`${name}-error`) : undefined);
 
+  const chosen = itemId ? getCatalogItem(itemId) : undefined;
+  const chosenPiece = chosen && text.toLowerCase().includes(chosen.name.toLowerCase()) ? chosen : undefined;
+
   return (
-    <form
-      onSubmit={onSubmit}
-      noValidate
-      className="grid grid-cols-1 gap-8 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:gap-20 xl:gap-24"
-    >
-      {/* On wide screens the photo is as tall as the screen allows (and never wider than 42% of it);
-          its column is exactly as wide as the photo. Narrower screens stack it above the form. */}
-      <div className="mx-auto flex w-full max-w-md flex-col gap-3 lg:mx-0 lg:w-min lg:max-w-none">
-        <label
-          htmlFor={id("photo")}
-          className={`relative flex aspect-[3/4] w-full cursor-pointer lg:h-[clamp(416px,min(calc(100svh-19.5rem),42vw),820px)] lg:w-auto lg:self-start flex-col items-center justify-center overflow-hidden rounded-card text-center has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-sage ${
-            preview ? "bg-surface" : "border-2 border-dashed border-line bg-surface hover:border-sage"
-          }`}
-        >
-          {preview ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={preview} alt="Your uploaded photo" className="absolute inset-0 size-full object-cover" />
-              <span className="absolute right-3 bottom-3 rounded-full bg-surface/90 px-4 py-2 text-small font-medium text-sage underline">
-                Change photo
-              </span>
-            </>
-          ) : storedPhotoId ? (
-            <span className="flex flex-col gap-1 px-8">
-              <span className="text-body font-medium text-ink">Using the photo you added earlier</span>
-              <span className="text-small text-muted">Tap to choose a new one.</span>
-            </span>
-          ) : (
-            <span className="flex flex-col gap-1 px-8">
-              <span className="font-display text-h2 text-ink">Add a full-body photo</span>
-              <span className="text-small text-muted">JPG or PNG, up to 10 MB. Stand facing the camera.</span>
-            </span>
-          )}
-          <input
-            id={id("photo")}
-            type="file"
-            accept="image/jpeg,image/png"
-            className="sr-only"
-            aria-describedby={describedBy("photo")}
-            onChange={(e) => onPhotoChange(e.target.files?.[0])}
-          />
-        </label>
-        <FieldError id={id("photo-error")} message={errors.photo} />
-
-        <label className="flex min-h-11 items-start gap-3 text-body text-ink">
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => {
-              setConsent(e.target.checked);
-              clearError("consent");
-            }}
-            aria-describedby={describedBy("consent")}
-            className="mt-0.5 size-5 shrink-0 accent-sage"
-          />
-          <span>I agree to send this photo for try-on. It&apos;s deleted within an hour.</span>
-        </label>
-        <FieldError id={id("consent-error")} message={errors.consent} />
-      </div>
-
-      <div className="flex max-w-3xl flex-col gap-8 [@media(max-height:820px)]:gap-4">
+    <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-x-10 lg:gap-y-6">
+      <div className="flex min-w-0 flex-col gap-6 rounded-card bg-surface p-4 md:p-6 lg:col-start-2 lg:row-start-1">
         <div className="flex flex-col gap-2">
-          <label htmlFor={id("text")} className={labelClass}>
-            The look you want
-          </label>
-          <textarea
-            id={id("text")}
-            rows={2}
-            value={text}
-            onChange={(e) => onTextChange(e.target.value)}
+          <label htmlFor={id("text")} className="font-display text-h2 font-medium text-ink">The look you want</label>
+          <textarea id={id("text")} rows={3} value={text} onChange={(e) => onTextChange(e.target.value)}
             placeholder="Silver-and-black concert look in size S, under $120."
             aria-describedby={`${id("text-hint")}${errors.text ? ` ${id("text-error")}` : ""}`}
-            className={`${inputClass} font-display text-h2 leading-snug md:text-[30px] md:leading-[38px] [@media(max-height:820px)]:md:text-[22px] [@media(max-height:820px)]:md:leading-7`}
-          />
+            className={`${inputClass} resize-y`} />
           <FieldError id={id("text-error")} message={errors.text} />
-          <p id={id("text-hint")} className="text-small text-muted">
-            Mention a size or budget and it fills in below.
-          </p>
+          <p id={id("text-hint")} className="text-small text-muted">Mention a size or budget and it fills in below.</p>
         </div>
-
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <fieldset aria-describedby={describedBy("topSize")} className="flex min-w-0 flex-col gap-2">
+          <legend className="mb-2 text-body font-medium text-ink">Top or jacket size</legend>
+          <div className="flex flex-wrap gap-2">
+            {SIZES.map((size) => <label key={size} className="cursor-pointer">
+              <input type="radio" name={id("topSize")} value={size} checked={topSize === size}
+                onChange={() => { setTopSize(size); setSizeSetByHand(true); clearError("topSize"); }} className="peer sr-only" />
+              <span className="flex min-h-12 min-w-11 items-center justify-center rounded-full border border-line px-2 text-small font-medium text-ink peer-checked:border-sage peer-checked:bg-sage peer-checked:text-on-sage peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-sage">{size}</span>
+            </label>)}
+          </div>
+          <FieldError id={id("topSize-error")} message={errors.topSize} />
+        </fieldset>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <label htmlFor={id("budget")} className={smallLabel}>
-              Budget (USD)
-            </label>
-            <input
-              id={id("budget")}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              value={budget}
-              onChange={(e) => {
-                setBudget(e.target.value);
-                setBudgetSetByHand(true);
-                clearError("budget");
-              }}
-              placeholder="120"
-              aria-describedby={describedBy("budget")}
-              className={inputClass}
-            />
+            <label htmlFor={id("budget")} className={smallLabel}>Budget (USD)</label>
+            <input id={id("budget")} type="number" inputMode="numeric" min={1} value={budget}
+              onChange={(e) => { setBudget(e.target.value); setBudgetSetByHand(true); clearError("budget"); }}
+              placeholder="120" aria-describedby={describedBy("budget")} className={inputClass} />
             <FieldError id={id("budget-error")} message={errors.budget} />
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor={id("topSize")} className={smallLabel}>
-              Top or jacket size
-            </label>
-            <select
-              id={id("topSize")}
-              value={topSize}
-              onChange={(e) => {
-                setTopSize(e.target.value);
-                setSizeSetByHand(true);
-                clearError("topSize");
-              }}
-              aria-describedby={describedBy("topSize")}
-              className={inputClass}
-            >
-              <option value="">Choose</option>
-              {SIZES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <FieldError id={id("topSize-error")} message={errors.topSize} />
-          </div>
-          <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
-            <label htmlFor={id("bottomSize")} className={smallLabel}>
-              Bottoms size <span className="font-normal text-muted">(optional)</span>
-            </label>
+            <label htmlFor={id("bottomSize")} className={smallLabel}>Bottoms size <span className="font-normal text-muted">(optional)</span></label>
             <select id={id("bottomSize")} value={bottomSize} onChange={(e) => setBottomSize(e.target.value)} className={inputClass}>
               <option value="">No bottoms</option>
-              {SIZES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
+              {SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor={id("keep")} className={labelClass}>
-            Pieces you already own and want to keep
+      <div className="flex min-w-0 flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:row-span-2">
+        {chosenPiece && <div className="flex items-center gap-4 rounded-card bg-surface p-4">
+          <div className="w-20 shrink-0"><ProductImage src={chosenPiece.imageUrl} alt={chosenPiece.name} category={chosenPiece.category} /></div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="text-small text-muted">Styling around</p>
+            <Link href={chosenPiece.productUrl} className="text-body font-medium text-ink underline">{chosenPiece.name}</Link>
+            <p className="text-price tabular-nums text-ink">{formatPrice(chosenPiece.price)}</p>
+          </div>
+        </div>}
+        <div className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-6">
+          <h2 className="font-display text-h2 font-medium text-ink">Your try-on photo</h2>
+          <label htmlFor={id("photo")} className={`relative flex w-full cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-photo border border-dashed border-line bg-stone text-center hover:border-sage has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-sage ${preview ? "aspect-[3/4]" : "min-h-40 p-4 md:min-h-48"}`}>
+            {preview ? <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview} alt="Your uploaded photo" className="absolute inset-0 size-full object-contain" />
+              <span className="absolute right-3 bottom-3 rounded-full bg-surface px-4 py-2 text-small font-medium text-sage underline">Change photo</span>
+            </> : <>
+              <span className="text-body font-medium text-ink">{storedPhotoId ? "Using your earlier photo" : "Add a full-body photo"}</span>
+              <span className="text-small text-muted">{storedPhotoId ? "Choose a new photo to replace it." : "Stand facing the camera. JPG or PNG, up to 10 MB."}</span>
+              <span className="inline-flex min-h-11 items-center rounded-full border border-sage px-5 text-small font-medium text-sage">{storedPhotoId ? "Change photo" : "Choose photo"}</span>
+            </>}
+            <input id={id("photo")} type="file" accept="image/jpeg,image/png" className="sr-only" aria-describedby={describedBy("photo")} onChange={(e) => onPhotoChange(e.target.files?.[0])} />
           </label>
+          <FieldError id={id("photo-error")} message={errors.photo} />
+          <label className="flex min-h-11 items-start gap-3 text-small text-ink">
+            <input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); clearError("consent"); }} aria-describedby={describedBy("consent")} className="mt-0.5 size-5 shrink-0 accent-sage" />
+            <span>I agree to send this photo for try-on. It&apos;s deleted within an hour.</span>
+          </label>
+          <FieldError id={id("consent-error")} message={errors.consent} />
+        </div>
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-6 lg:col-start-2 lg:row-start-2">
+        <div className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-6">
+          <label htmlFor={id("keep")} className={smallLabel}>Keep something you own <span className="font-normal text-muted">(optional)</span></label>
           <div className="flex gap-2">
-            <input
-              id={id("keep")}
-              value={keepDraft}
-              onChange={(e) => setKeepDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addKeep();
-                }
-              }}
-              placeholder="Black boots"
-              className={inputClass}
-            />
-            <button
-              type="button"
-              onClick={addKeep}
-              className="min-h-11 shrink-0 rounded-full border border-line px-5 text-small font-medium text-ink hover:bg-sage-tint"
-            >
-              Add
-            </button>
+            <input id={id("keep")} value={keepDraft} onChange={(e) => setKeepDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addKeep(); } }} placeholder="Black boots" className={`${inputClass} min-w-0`} />
+            <button type="button" onClick={addKeep} className="min-h-11 shrink-0 rounded-full border border-line px-5 text-small font-medium text-ink hover:bg-sage-tint">Add</button>
           </div>
           {keep.length > 0 && (
             <ul className="flex flex-wrap gap-2" aria-label="Pieces to keep">
@@ -384,24 +299,10 @@ export function BriefForm() {
             </ul>
           )}
         </div>
-
-        {formError && (
-          <p role="alert" className="rounded-field border border-danger/40 bg-surface px-4 py-3 text-small text-danger">
-            {formError}
-          </p>
-        )}
-
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          <button
-            type="submit"
-            aria-busy={submitting}
-            className="min-h-16 rounded-full bg-sage px-12 text-h2 font-medium text-on-sage hover:bg-sage-hover [@media(max-height:820px)]:min-h-12 [@media(max-height:820px)]:text-body"
-          >
-            {submitting ? "Getting proposals…" : "Get proposals"}
-          </button>
-          <Link href="/example" className="inline-flex min-h-11 items-center border-b-2 border-terracotta text-body font-medium text-ink">
-            See an example
-          </Link>
+        {formError && <p role="alert" className="rounded-field border border-danger/40 bg-surface px-4 py-3 text-small text-danger">{formError}</p>}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+          <button type="submit" aria-busy={submitting} disabled={submitting} className="min-h-12 rounded-full bg-sage px-8 text-body font-medium text-on-sage hover:bg-sage-hover disabled:cursor-wait">{submitting ? "Getting proposals…" : "Get proposals"}</button>
+          <Link href="/example" className="inline-flex min-h-11 items-center self-center text-small font-medium text-sage underline">See an example</Link>
         </div>
       </div>
     </form>
