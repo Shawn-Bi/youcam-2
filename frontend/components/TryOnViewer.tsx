@@ -46,7 +46,7 @@ export function TryOnViewer({ item, previewId, onStart, starting, finished }: Pr
     );
   } else if (!previewId) {
     tryOn = (
-      <div className="flex flex-col items-center gap-3 px-6 text-center">
+      <div className="flex flex-col items-center gap-3 text-center">
         <p className="text-body text-ink">See the {item.name.toLowerCase()} on your photo.</p>
         <button type="button" onClick={onStart} disabled={starting} className={outlineButton}>
           {starting ? "Starting…" : "Preview on me"}
@@ -63,7 +63,7 @@ export function TryOnViewer({ item, previewId, onStart, starting, finished }: Pr
     );
   } else if (state?.status === "uncertain" || state?.status === "unavailable" || state?.status === "timeout") {
     tryOn = (
-      <div role="status" className="flex flex-col items-center gap-3 px-6 text-center">
+      <div role="status" className="flex flex-col items-center gap-3 text-center">
         <p className="text-body text-ink">{state.error ?? "Your preview is taking longer. Check the same task again without starting another generation."}</p>
         <button type="button" onClick={() => setCheckAgain((n) => n + 1)} className={outlineButton}>Check again</button>
         {state.status === "unavailable" && <Link href="/brief" className="text-small text-sage underline">Start a new brief (new generation may cost units again)</Link>}
@@ -75,7 +75,7 @@ export function TryOnViewer({ item, previewId, onStart, starting, finished }: Pr
           ? (state.error ?? "The preview didn't work this time.")
           : "The preview finished but came back empty.";
     tryOn = (
-      <div role="alert" className="flex flex-col items-center gap-3 px-6 text-center">
+      <div role="alert" className="flex flex-col items-center gap-3 text-center">
         <p className="text-body text-ink">{message}</p>
         <button type="button" onClick={onStart} disabled={starting} className={outlineButton}>
           Try again
@@ -84,12 +84,25 @@ export function TryOnViewer({ item, previewId, onStart, starting, finished }: Pr
     );
   } else {
     tryOn = (
-      <div className="flex w-full max-w-xs flex-col gap-3 px-6 text-center" aria-live="polite">
+      <div className="flex w-full max-w-xs flex-col gap-3 text-center" aria-live="polite">
         <p className="text-body text-ink">{generationProgress(state?.phase)}</p>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-sage-tint">
           <div className="h-full w-1/3 animate-pulse rounded-full bg-terracotta" />
         </div>
         <p className="text-small text-muted">{elapsedLabel(state?.elapsedSeconds)}. Previews can take several minutes.</p>
+      </div>
+    );
+  }
+
+  const hasImage = Boolean(finished || (state?.status === "success" && state.imageUrl));
+  if (!hasImage) {
+    return (
+      <div className="flex items-center gap-4 self-start rounded-card border border-line bg-surface p-4 md:p-6">
+        <div className="w-20 shrink-0 sm:w-28">
+          <ProductImage src={item.imageUrl} alt={item.name} category={item.category} />
+          <p className="mt-2 text-center text-label text-muted">Product photo</p>
+        </div>
+        <div className="flex min-w-0 flex-1 justify-center">{tryOn}</div>
       </div>
     );
   }
