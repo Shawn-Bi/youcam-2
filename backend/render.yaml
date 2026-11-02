@@ -3,7 +3,7 @@ services:
     name: look-exchange-backend
     runtime: python
     plan: free
-    branch: backend-development
+    branch: main
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
