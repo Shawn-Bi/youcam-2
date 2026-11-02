@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import time
+import uuid
 from collections import Counter
 import httpx
 from config import int_env
@@ -68,21 +69,40 @@ class Jobs:
     async def run(self, task, key, photo=None, reference=None, category=None, source_url=None, gender=None, session=None):
         """`category` is upper_body or outer for clothes try-on, or bag for bag try-on (which needs `gender`)."""
         task['status'] = 'running'
+        task.setdefault('started', time.monotonic())
+        task.setdefault('trace', uuid.uuid4().hex)
+        task.setdefault('timing_marks', {})
+        if session is not None:
+            task['reservation_session'] = session
+        submitting = False
         try:
             async with asyncio.timeout(DEADLINES[task['kind']]):
                 async with httpx.AsyncClient(timeout=30, follow_redirects=False) as client:
                     api = YouCam(key, client)
-                    if task['kind'] == 'preview':
+                    if task.get('remote_id'):
+                        remote_id, endpoint = task['remote_id'], task['endpoint']
+                        field = 'imageUrl' if task['kind'] == 'preview' else 'videoUrl'
+                    elif task['kind'] == 'preview':
+                        self.mark(task, 'uploading')
                         source = await api.upload(photo, sniff(photo) or 'image/jpeg')
                         garment = await api.upload(reference, sniff(reference) or 'image/png')
+                        self.mark(task, 'submitting')
+                        submitting = True
                         if category == 'bag':
                             remote_id, endpoint = await api.create_bag(source, garment, gender), BAG
                         else:
                             remote_id, endpoint = await api.create_cloth(source, garment, category), CLOTH
                         field = 'imageUrl'
                     else:
-                        remote_id = await self.create_video(api, source_url)
+                        self.mark(task, 'preparing')
+                        source = await self.video_source(api, source_url, lambda phase: self.mark(task, phase))
+                        self.mark(task, 'submitting')
+                        submitting = True
+                        remote_id = await api.create_video(**source)
                         endpoint, field = VIDEO, 'videoUrl'
+                    task.update(remote_id=remote_id, endpoint=endpoint)
+                    submitting = False
+                    self.mark(task, 'generating')
                     while True:
                         try:
                             data = await api.status(endpoint, remote_id)
@@ -93,39 +113,81 @@ class Jobs:
                         state = data.get('task_status')
                         if state == 'error':
                             code = api.error_code(data)
-                            raise YouCamError(friendly(code), code=code or 'task_error')
+                            self.fail(task, session, friendly(code), code or 'task_error')
+                            return
                         if state == 'success':
                             url = api.result_url(data)
                             if not url:
                                 raise YouCamError('The try-on service returned nothing usable. Please try again.', code='no_result')
                             task.update(status='success', **{field: url})
+                            task.pop('error', None)
+                            self.mark(task, 'complete')
                             return
                         await asyncio.sleep(POLL_SECONDS)
         except TimeoutError:
-            # YouCam may still finish this task and charge for it, so the slot stays used.
-            self.fail(task, session, 'Generation timed out. Please try again.', 'timeout', release=False)
+            if task.get('remote_id') or submitting:
+                self.uncertain(task)
+            else:
+                self.fail(task, session, 'Image preparation timed out. Please try again.', 'timeout')
         except YouCamError as exc:
-            self.fail(task, session, str(exc), exc.code)
+            if task.get('remote_id') or (submitting and (exc.transient or exc.code in ('network', 'upload_response', 'task_response'))):
+                self.uncertain(task)
+            else:
+                self.fail(task, session, str(exc), exc.code)
         except (httpx.HTTPError, ValueError, TypeError, KeyError):
-            self.fail(task, session, friendly(None), 'unexpected')
+            if submitting or task.get('remote_id'):
+                self.uncertain(task)
+            else:
+                self.fail(task, session, friendly(None), 'unexpected')
 
     @staticmethod
-    async def create_video(api, source_url):
+    async def video_source(api, source_url, mark=lambda phase: None):
         """YouCam reads the try-on result from our upload, which does not depend on its signed URL being public."""
         try:
+            mark('downloading')
             image = await api.download(source_url)
-            return await api.create_video(source_file_id=await api.upload(image, sniff(image)))
+            mark('uploading')
+            return {'source_file_id': await api.upload(image, sniff(image))}
         except YouCamError as exc:
             log.warning('video source upload failed (%s); falling back to the result URL', exc.code)
-            return await api.create_video(source_url=source_url)
+            return {'source_url': source_url}
+
+    @staticmethod
+    def mark(task, phase):
+        task.setdefault('started', time.monotonic())
+        task.setdefault('trace', uuid.uuid4().hex)
+        task.setdefault('timing_marks', {})
+        task['phase'] = phase
+        elapsed = round((time.monotonic() - task['started']) * 1000)
+        previous = max(task['timing_marks'].values(), default=0)
+        task['timing_marks'][phase] = elapsed
+        if phase in ('complete', 'failed'):
+            task['finished_elapsed'] = elapsed / 1000
+        log.info('generation trace=%s kind=%s phase=%s elapsed_ms=%s phase_ms=%s',
+                 task['trace'], task['kind'], phase, elapsed, elapsed - previous)
+
+    def uncertain(self, task):
+        task.update(status='uncertain', error='Completion is not confirmed. Check this task again; do not start another generation.')
+        self.mark(task, 'unconfirmed')
+
+    def recheck(self, task, key):
+        """Resume status reads only. A missing provider ID never triggers a new submission."""
+        if task['status'] == 'uncertain' and task.get('remote_id') and key:
+            task['status'] = 'running'
+            self.start(task, key, session=task.get('reservation_session'))
 
     def fail(self, task, session, message, code, release=True):
         """Mark a task failed. Its slot is given back unless YouCam might still charge for it."""
         log.warning('%s failed: %s', task['kind'], code)
         task.update(status='failed', error=message)
+        self.mark(task, 'failed')
         if session is not None and release:
             self.release(session, task['kind'])
 
     @staticmethod
     def public(task):
-        return {k: v for k, v in task.items() if k in ('status', 'imageUrl', 'videoUrl', 'error')}
+        result = {k: v for k, v in task.items() if k in ('status', 'imageUrl', 'videoUrl', 'error', 'phase')}
+        if 'started' in task:
+            elapsed = task.get('finished_elapsed', time.monotonic() - task['started'])
+            result['elapsedSeconds'] = round(elapsed)
+        return result

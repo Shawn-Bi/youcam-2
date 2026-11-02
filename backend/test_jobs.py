@@ -131,7 +131,7 @@ def test_successful_preview_uploads_both_images_and_returns_the_result(fake):
     fake.script = [{'task_status': 'running'}, {'task_status': 'success', 'results': {'url': 'https://r.example/p.png'}}]
     task = preview_task()
     run(Jobs().run(task, 'key', photo=JPEG, reference=PNG, category='outer'))
-    assert task == {'kind': 'preview', 'status': 'success', 'imageUrl': 'https://r.example/p.png'}
+    assert task['status'] == 'success' and task['imageUrl'] == 'https://r.example/p.png'
     assert fake.calls[:3] == [('upload', 'image/jpeg'), ('upload', 'image/png'), ('cloth', 'file-1', 'file-2', 'outer')]
     assert [c[:2] for c in fake.calls[3:]] == [('status', CLOTH)] * 2
 
@@ -140,7 +140,7 @@ def test_bag_preview_uses_the_bag_endpoint_with_a_gender(fake):
     fake.script = [{'task_status': 'success', 'results': {'url': 'https://r.example/bag.jpg'}}]
     task = preview_task()
     run(Jobs().run(task, 'key', photo=JPEG, reference=PNG, category='bag', gender='male'))
-    assert task == {'kind': 'preview', 'status': 'success', 'imageUrl': 'https://r.example/bag.jpg'}
+    assert task['status'] == 'success' and task['imageUrl'] == 'https://r.example/bag.jpg'
     assert ('bag', 'file-1', 'file-2', 'male') in fake.calls and not any(c[0] == 'cloth' for c in fake.calls)
     assert [c[:2] for c in fake.calls if c[0] == 'status'] == [('status', BAG)]
 
@@ -168,18 +168,18 @@ def test_transient_status_errors_keep_polling(fake):
     assert task['status'] == 'success'
 
 
-def test_permanent_status_errors_fail_the_task(fake):
+def test_status_auth_errors_do_not_claim_the_provider_task_failed(fake):
     fake.script = [YouCamError('nope', code='http_401')]
     task = preview_task()
     run(Jobs().run(task, 'key', photo=PNG, reference=PNG, category='upper_body'))
-    assert task['status'] == 'failed' and task['error'] == 'nope'
+    assert task['status'] == 'uncertain' and task['remote_id'] == 'remote-1'
 
 
 def test_success_without_a_usable_url_fails(fake):
     fake.script = [{'task_status': 'success', 'results': {}}]
     task = preview_task()
     run(Jobs().run(task, 'key', photo=PNG, reference=PNG, category='upper_body'))
-    assert task['status'] == 'failed' and 'imageUrl' not in task
+    assert task['status'] == 'uncertain' and 'imageUrl' not in task
 
 
 def test_a_job_that_never_finishes_times_out_but_keeps_its_slot_because_youcam_may_still_charge(fake, monkeypatch):
@@ -195,7 +195,7 @@ def test_a_job_that_never_finishes_times_out_but_keeps_its_slot_because_youcam_m
         return jobs, task
 
     jobs, task = run(go())
-    assert task['status'] == 'failed' and 'timed out' in task['error']
+    assert task['status'] == 'uncertain' and 'not confirmed' in task['error']
     assert jobs.counts[(jobs.day(), 's', 'preview')] == 1  # still counted: a retry must not look free
 
 
@@ -207,14 +207,14 @@ def test_unexpected_transport_errors_are_hidden_from_shoppers(fake):
     fake.script = [KeyError('secret-detail')]
     task = preview_task()
     run(Jobs().run(task, 'key', photo=PNG, reference=PNG, category='upper_body'))
-    assert task['status'] == 'failed' and 'secret-detail' not in task['error']
+    assert task['status'] == 'uncertain' and 'secret-detail' not in task['error']
 
 
 def test_video_is_made_from_an_upload_of_the_try_on_result(fake):
     fake.script = [{'task_status': 'success', 'results': {'url': 'https://r.example/v.mp4'}}]
     task = {'kind': 'video', 'status': 'queued'}
     run(Jobs().run(task, 'key', source_url='https://r.example/p.png'))
-    assert task == {'kind': 'video', 'status': 'success', 'videoUrl': 'https://r.example/v.mp4'}
+    assert task['status'] == 'success' and task['videoUrl'] == 'https://r.example/v.mp4'
     assert fake.calls[:3] == [('download', 'https://r.example/p.png'), ('upload', 'image/png'), ('video', 'file-2', None)]
     assert fake.calls[3][:2] == ('status', VIDEO)
 
@@ -225,6 +225,39 @@ def test_video_falls_back_to_the_result_url_when_the_download_fails(fake):
     task = {'kind': 'video', 'status': 'queued'}
     run(Jobs().run(task, 'key', source_url='https://r.example/p.png'))
     assert task['status'] == 'success' and ('video', None, 'https://r.example/p.png') in fake.calls
+
+
+def test_uncertain_video_submission_is_never_submitted_twice(fake, monkeypatch):
+    async def ambiguous(self, **source):
+        self.calls.append(('accepted_without_response',))
+        raise YouCamError('network', code='network', transient=True)
+    monkeypatch.setattr(fake, 'create_video', ambiguous)
+    task = {'kind': 'video', 'status': 'queued'}
+    jobs = Jobs()
+    run(jobs.run(task, 'key', source_url='https://r.example/signed-secret'))
+    assert fake.calls.count(('accepted_without_response',)) == 1
+    assert task['status'] == 'uncertain' and 'remote_id' not in task
+    jobs.recheck(task, 'key')
+    assert task['status'] == 'uncertain'
+
+
+def test_timed_out_job_can_finish_by_reading_the_same_provider_task(fake, monkeypatch):
+    task = {'kind': 'video', 'status': 'queued', 'remote_id': 'existing-task', 'endpoint': VIDEO}
+    fake.script = [{'task_status': 'success', 'results': {'url': 'https://r.example/v.mp4'}}]
+    run(Jobs().run(task, 'key'))
+    assert task['status'] == 'success'
+    assert fake.calls == [('status', VIDEO, 'existing-task')]
+
+
+def test_phase_timings_do_not_log_photos_keys_or_signed_urls(fake, caplog):
+    fake.script = [{'task_status': 'success', 'results': {'url': 'https://r.example/private-result'}}]
+    with caplog.at_level('INFO', logger='look-exchange'):
+        task = {'kind': 'video', 'status': 'queued'}
+        run(Jobs().run(task, 'private-key', source_url='https://r.example/private-source'))
+    assert 'phase=preparing' in caplog.text and 'phase=complete' in caplog.text
+    assert 'elapsed_ms=' in caplog.text
+    assert 'private-key' not in caplog.text and 'https://' not in caplog.text
+    assert 'remote_id' not in Jobs.public(task) and 'trace' not in Jobs.public(task)
 
 
 def test_request_urls_are_not_logged(caplog):

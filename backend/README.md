@@ -51,6 +51,14 @@ One clothes try-on (`outer`, full-body photo) took about 13 seconds and cost 2 u
 
 YouCam charges only for successful tasks. A session is one uploaded photo. Per session the defaults allow 6 running or successful previews and 2 videos; a failed task gives its slot back (except one that timed out, because YouCam may still finish and charge for it), while the attempt caps still bound retries. Per UTC day the defaults allow 40 tasks and 10 videos. Limits reset when the server restarts and a new upload starts a new session, so they are a guard rail, not abuse prevention.
 
+## Generation timing and recovery
+
+Safe `generation` logs record a local trace, kind, phase, elapsed milliseconds and phase duration. Request logs contain route templates and duration, never inputs or query strings. Browser health timing includes connection/startup delay; server request timing begins only after the process can serve requests. Compare both to distinguish startup from transfer and provider time.
+
+Task responses may include `phase` and `elapsedSeconds`. `uncertain` means completion is not confirmed, not that the provider failed. A status read resumes polling a known provider task without submitting another generation. An uncertain submission without a provider ID cannot be reconciled automatically and is not resubmitted. Usage reservations remain held. Confirmed provider failures can be retried. Video image-source fallback is restricted to preparation errors before submission.
+
 ## Limitations
+
+State remains in memory: none of this guarantees recovery after a service restart. No worker or hosting tier change is included.
 
 Session data lives in memory and is lost on restart. `render.yaml` is a proposed Render free-service configuration; free services sleep after idle time and lose state when they do. The Render service builds from the whole repository, so `frontend/data/catalog.json` is available at runtime.

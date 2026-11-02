@@ -436,6 +436,20 @@ def test_an_unavailable_product_photo_is_a_clear_error_and_costs_no_slot(youcam,
 
 def test_health_and_catalog_endpoints():
     assert client.get('/api/health').json() == {'status': 'ok', 'youcamConfigured': False, 'catalogItems': 48}
+
+
+def test_uncertain_video_submission_reuses_job_without_another_provider_request(youcam):
+    p = proposal()
+    base = f"/api/proposals/{p['id']}"
+    preview = client.post(base + '/previews', json={'itemId': p['items'][0]['itemId']}).json()['previewId']
+    client.post(base + '/select')
+    body = {'previewId': preview, 'duration': 5, 'resolution': '480'}
+    first = client.post(base + '/videos', json=body).json()['videoId']
+    module.videos[first]['status'] = 'uncertain'
+    calls = len(youcam)
+    assert client.post(base + '/videos', json=body).json()['videoId'] == first
+    assert client.get('/api/videos/' + first).json()['status'] == 'uncertain'
+    assert len(youcam) == calls
     listing = client.get('/api/catalogs/sol-social').json()
     assert listing['storeId'] == 'sol-social' and len(listing['items']) == 12
     assert all(set(i) == ITEM_KEYS and i['imageUrl'].startswith('/catalog/') for i in listing['items'])

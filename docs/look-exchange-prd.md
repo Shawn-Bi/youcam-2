@@ -108,7 +108,7 @@ Both sides build against this contract from day one. The frontend uses mock JSON
 | `POST /api/proposals/:id/videos` | `{ previewId, duration: 5, resolution: "480" }` | `{ videoId }` |
 | `GET /api/videos/:videoId` | — | `{ status, videoUrl?, error? }` |
 
-`status` is one of `queued`, `running`, `success`, `failed`.
+`status` is one of `queued`, `running`, `success`, `failed`, `uncertain`. An `uncertain` result must not offer automatic regeneration: status reads can resume checking the same provider task when its ID is known. Optional `phase` and `elapsedSeconds` describe progress without exposing provider IDs.
 
 ```ts
 type Item = {
@@ -255,7 +255,7 @@ React 前端（Dennis）                    后端（Shawn）                   
 
 双方从第一天起按此契约开发。后端上线前，前端使用相同结构的模拟 JSON。修改契约须双方同意，并同步更新本节。
 
-接口表和数据类型见英文部分第 6 节（代码与字段名两种语言通用）。`status` 取值为 `queued`、`running`、`success`、`failed`。
+接口表和数据类型见英文部分第 6 节（代码与字段名两种语言通用）。`status` 取值为 `queued`、`running`、`success`、`failed`、`uncertain`。`uncertain` 表示结果尚未确认，不应自动重新生成；已知服务商任务 ID 时可继续查询同一任务。可选字段 `phase`、`elapsedSeconds` 表示进度，不暴露服务商任务 ID。
 
 ### 7. 分工
 

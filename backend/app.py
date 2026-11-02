@@ -30,7 +30,7 @@ TTL = 3600  # seconds of inactivity before a session's data is dropped
 VIDEO_SOURCES = catalog.UPPER + ('bottom',)
 # How each catalog category is sent to YouCam.
 YOUCAM_CATEGORY = {'top': 'upper_body', 'outer': 'outer', 'bottom': 'lower_body', 'bag': 'bag'}
-ACTIVE = ('queued', 'running', 'success')
+ACTIVE = ('queued', 'running', 'success', 'uncertain')
 MAX_PHOTO_BYTES = 10_000_000
 
 photos, briefs, proposals, previews, videos = {}, {}, {}, {}, {}
@@ -46,6 +46,7 @@ def clean():
 
 @asynccontextmanager
 async def lifespan(app):
+    logging.getLogger('look-exchange').info('service_started')
     async def sweep():
         while True:
             await asyncio.sleep(60)
@@ -65,6 +66,18 @@ async def lifespan(app):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.middleware('http')
+async def request_timing(request, call_next):
+    started = time.monotonic()
+    response = await call_next(request)
+    route = request.scope.get('route')
+    # Only route templates: no user inputs, query strings, signed URLs or provider IDs.
+    logging.getLogger('look-exchange').info('request method=%s route=%s status=%s elapsed_ms=%s',
+        request.method, getattr(route, 'path', 'unmatched'), response.status_code,
+        round((time.monotonic() - started) * 1000))
+    return response
 app.add_middleware(
     CORSMiddleware, allow_origins=config.FRONTEND_ORIGINS, allow_origin_regex=config.FRONTEND_ORIGIN_REGEX,
     allow_methods=['GET', 'POST', 'PATCH'], allow_headers=['Content-Type'],
@@ -385,6 +398,8 @@ async def start_preview(pid: str, body: PreviewBody):
 async def get_preview(preview_id: str):
     clean()
     task = get(previews, preview_id)
+    if task:
+        jobs.recheck(task, os.getenv('YOUCAM_API_KEY'))
     return jobs.public(task) if task else error(404, 'Preview not found.')
 
 
@@ -428,4 +443,6 @@ async def start_video(pid: str, body: VideoBody):
 async def get_video(video_id: str):
     clean()
     task = get(videos, video_id)
+    if task:
+        jobs.recheck(task, os.getenv('YOUCAM_API_KEY'))
     return jobs.public(task) if task else error(404, 'Video not found.')
